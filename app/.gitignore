@@ -1,0 +1,47 @@
+# english-rpg/app · 交付物仓库的 .gitignore
+#
+# 本仓库的定位：零依赖、零构建，源码即产物（双击 index.html 即可运行）。
+# 因此没有构建产物需要忽略 —— 下面只挡「系统 / 编辑器 / 临时」垃圾，
+# 避免它们混进存档，同时给未来可能出现的工具目录留好规则。
+#
+# 注意：以下文件是交付物的一部分，绝对不能忽略：
+#   index.html / styles/*.css / src/**/*.js / data/words.json
+
+# ---- 操作系统 ----
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+$RECYCLE.BIN/
+
+# ---- 编辑器 / IDE ----
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-workspace
+
+# ---- 临时文件与日志 ----
+*.log
+*.tmp
+*.temp
+*.pid
+*.seed
+_tmp*
+_tmp*/
+
+# ---- 将来若引入工具链（当前没有，按「零构建」约定不该出现）----
+node_modules/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# ---- 敏感信息兜底（本项目不需要任何密钥，出现即视为误提交）----
+.env
+.env.*
+!*.env.example
+*.pem
+*.key
+credentials.json

@@ -1,0 +1,3283 @@
+[
+  {
+    "id": "w0001",
+    "word": "consider",
+    "phonetic": "kənˈsɪdə(r)",
+    "pos": "v.",
+    "meaning_cn": "仔细考虑；认为；体谅",
+    "meaning_en": "to think carefully about something before making a decision",
+    "example": "Please consider all the options carefully before you make a final decision.",
+    "example_cn": "请在做出最终决定前仔细考虑所有选项。",
+    "collins": null,
+    "frq": 320,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0002",
+    "word": "control",
+    "phonetic": "kənˈtrəʊl",
+    "pos": "v.",
+    "meaning_cn": "控制；管理；支配；抑制",
+    "meaning_en": "to make something do what you want or keep it in order",
+    "example": "Good teachers control the classroom without ever raising their voices.",
+    "example_cn": "好老师不用大声喊也能管住课堂。",
+    "collins": null,
+    "frq": 350,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0003",
+    "word": "continue",
+    "phonetic": "kənˈtɪnjuː",
+    "pos": "v.",
+    "meaning_cn": "继续；持续；延续；延伸",
+    "meaning_en": "to keep happening or doing something without stopping",
+    "example": "We will continue the discussion after a short coffee break.",
+    "example_cn": "我们会在短暂茶歇之后继续讨论。",
+    "collins": null,
+    "frq": 400,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0004",
+    "word": "appear",
+    "phonetic": "əˈpɪə",
+    "pos": "v.",
+    "meaning_cn": "出现；看来；显得",
+    "meaning_en": "to come into sight, or to seem to be a particular way",
+    "example": "A bright rainbow began to appear above the hills after the storm.",
+    "example_cn": "暴风雨过后，一道明亮的彩虹开始出现在山丘上方。",
+    "collins": null,
+    "frq": 620,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0005",
+    "word": "claim",
+    "phonetic": "kleɪm",
+    "pos": "v.",
+    "meaning_cn": "声称；主张；索取",
+    "meaning_en": "to say something is true without providing proof",
+    "example": "He continues to claim that he witnessed the accident, though nobody believes him.",
+    "example_cn": "他仍声称自己目击了那场事故，尽管没有人相信他。",
+    "collins": null,
+    "frq": 620,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0006",
+    "word": "develop",
+    "phonetic": "dɪˈveləp",
+    "pos": "v.",
+    "meaning_cn": "发展；开发；培养",
+    "meaning_en": "to grow gradually, or to make something new and better over time",
+    "example": "The company plans to develop several new products for young customers.",
+    "example_cn": "公司计划为年轻顾客开发几款新产品。",
+    "collins": null,
+    "frq": 620,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0007",
+    "word": "accept",
+    "phonetic": "əkˈsept",
+    "pos": "v.",
+    "meaning_cn": "接受；同意；认可",
+    "meaning_en": "to agree to take something that is offered to you",
+    "example": "She finally decided to accept the job offer in Shanghai.",
+    "example_cn": "她最终决定接受上海的那份工作邀请。",
+    "collins": null,
+    "frq": 690,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0008",
+    "word": "contain",
+    "phonetic": "kənˈteɪn",
+    "pos": "v.",
+    "meaning_cn": "包含；含有；容纳；控制",
+    "meaning_en": "to have something inside or as a part of something",
+    "example": "This bottle can contain up to two litres of fresh water.",
+    "example_cn": "这个瓶子最多可以装两升淡水。",
+    "collins": null,
+    "frq": 700,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0009",
+    "word": "design",
+    "phonetic": "dɪˈzaɪn",
+    "pos": "v.",
+    "meaning_cn": "设计；构思；图案",
+    "meaning_en": "to plan and draw how something will look or work before it is made",
+    "example": "Our team will design a new website for the local library.",
+    "example_cn": "我们团队将为当地图书馆设计一个新网站。",
+    "collins": null,
+    "frq": 780,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0010",
+    "word": "attempt",
+    "phonetic": "əˈtempt",
+    "pos": "v.",
+    "meaning_cn": "尝试；试图",
+    "meaning_en": "make an effort to do something difficult",
+    "example": "She decided to attempt the marathon despite her recent knee injury.",
+    "example_cn": "尽管膝盖最近受伤，她还是决定尝试跑马拉松。",
+    "collins": null,
+    "frq": 900,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0011",
+    "word": "charge",
+    "phonetic": "tʃɑːdʒ",
+    "pos": "v.",
+    "meaning_cn": "收费；充电；指控",
+    "meaning_en": "to ask someone for money for goods or services",
+    "example": "Many hotels charge extra for breakfast served in your own room.",
+    "example_cn": "许多酒店对送到房间的早餐额外收费。",
+    "collins": null,
+    "frq": 900,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0012",
+    "word": "contact",
+    "phonetic": "ˈkɒntækt",
+    "pos": "v.",
+    "meaning_cn": "联系；接触；取得联系",
+    "meaning_en": "to communicate with somebody, especially by phone or email",
+    "example": "I will contact the manager tomorrow about the new project schedule.",
+    "example_cn": "我明天会就新项目的进度联系经理。",
+    "collins": null,
+    "frq": 900,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0013",
+    "word": "direct",
+    "phonetic": "dəˈrekt",
+    "pos": "v.",
+    "meaning_cn": "指导；导演；指引",
+    "meaning_en": "to control or manage something, or to show somebody the way",
+    "example": "She will direct the school play for the third year running.",
+    "example_cn": "她将连续第三年执导学校的戏剧演出。",
+    "collins": null,
+    "frq": 900,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0014",
+    "word": "avoid",
+    "phonetic": "əˈvɔɪd",
+    "pos": "v.",
+    "meaning_cn": "避免；躲开",
+    "meaning_en": "keep away from someone or something, or prevent it happening",
+    "example": "We left home early to avoid the heavy morning traffic downtown.",
+    "example_cn": "我们早早出门，以避开市中心早高峰的拥堵。",
+    "collins": null,
+    "frq": 1000,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0015",
+    "word": "describe",
+    "phonetic": "dɪˈskraɪb",
+    "pos": "v.",
+    "meaning_cn": "描述；形容；描写",
+    "meaning_en": "to say what somebody or something is like by giving details",
+    "example": "Could you describe the man you saw near the station last night?",
+    "example_cn": "你能描述一下昨晚在车站附近看到的那个男人吗？",
+    "collins": null,
+    "frq": 1050,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0016",
+    "word": "apply",
+    "phonetic": "əˈplaɪ",
+    "pos": "v.",
+    "meaning_cn": "申请；应用；涂抹",
+    "meaning_en": "to make a formal request, or to put something to a practical use",
+    "example": "You should apply for the scholarship before the end of this month.",
+    "example_cn": "你应该在本月底之前申请这项奖学金。",
+    "collins": null,
+    "frq": 1080,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0017",
+    "word": "discuss",
+    "phonetic": "dɪˈskʌs",
+    "pos": "v.",
+    "meaning_cn": "讨论；商议；商量",
+    "meaning_en": "to talk about something with other people in order to share ideas",
+    "example": "We often discuss our weekend plans at lunch on Friday.",
+    "example_cn": "我们常在周五午饭时讨论周末的安排。",
+    "collins": null,
+    "frq": 1120,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0018",
+    "word": "depend",
+    "phonetic": "dɪˈpend",
+    "pos": "v.",
+    "meaning_cn": "依靠；取决于；信赖",
+    "meaning_en": "to need somebody or something for support, or to be decided by something else",
+    "example": "Whether we go hiking tomorrow will depend on the weather report.",
+    "example_cn": "我们明天是否去远足将取决于天气预报。",
+    "collins": null,
+    "frq": 1180,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0019",
+    "word": "approve",
+    "phonetic": "əˈpruːv",
+    "pos": "v.",
+    "meaning_cn": "正式批准；赞成；认可",
+    "meaning_en": "to officially agree to or accept something as good or right",
+    "example": "The committee will approve the new budget at tomorrow's meeting.",
+    "example_cn": "委员会将在明天的会议上批准新预算。",
+    "collins": null,
+    "frq": 1200,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0020",
+    "word": "achieve",
+    "phonetic": "əˈtʃiːv",
+    "pos": "v.",
+    "meaning_cn": "实现；达到；取得",
+    "meaning_en": "to successfully reach a goal through effort and hard work",
+    "example": "He worked hard for years to achieve his dream of teaching.",
+    "example_cn": "他多年努力，实现了当老师的梦想。",
+    "collins": null,
+    "frq": 1240,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0021",
+    "word": "attract",
+    "phonetic": "əˈtrækt",
+    "pos": "v.",
+    "meaning_cn": "吸引；引起",
+    "meaning_en": "cause someone or something to come closer or show interest",
+    "example": "Bright colours attract insects that help pollinate the flowers in spring.",
+    "example_cn": "鲜艳的颜色吸引昆虫，帮助春天的花朵授粉。",
+    "collins": null,
+    "frq": 1300,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0022",
+    "word": "contribute",
+    "phonetic": "kənˈtrɪbjuːt",
+    "pos": "v.",
+    "meaning_cn": "贡献；捐助；促成；出力",
+    "meaning_en": "to give money, help or ideas to something useful",
+    "example": "Many local people contribute money and clothes to the charity.",
+    "example_cn": "许多当地人向这家慈善机构捐钱和衣物。",
+    "collins": null,
+    "frq": 1300,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0023",
+    "word": "demand",
+    "phonetic": "dɪˈmɑːnd",
+    "pos": "v.",
+    "meaning_cn": "要求；需要；强烈要求",
+    "meaning_en": "to ask for something firmly because you believe you deserve it",
+    "example": "The workers demand better pay and safer working conditions now.",
+    "example_cn": "工人们现在要求更好的薪酬和更安全的工作条件。",
+    "collins": null,
+    "frq": 1300,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0024",
+    "word": "determine",
+    "phonetic": "dɪˈtɜːmɪn",
+    "pos": "v.",
+    "meaning_cn": "决定；确定；查明",
+    "meaning_en": "to decide something officially, or to find out the facts about it",
+    "example": "The judges will determine the winner after the final race today.",
+    "example_cn": "评委们将在今天的决赛后决定获胜者。",
+    "collins": null,
+    "frq": 1320,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0025",
+    "word": "afford",
+    "phonetic": "əˈfɔːd",
+    "pos": "v.",
+    "meaning_cn": "买得起；承担得起",
+    "meaning_en": "have enough money or resources to pay for something",
+    "example": "We cannot afford a new car this year because of rising prices.",
+    "example_cn": "由于物价上涨，我们今年买不起新车。",
+    "collins": null,
+    "frq": 1380,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0026",
+    "word": "ban",
+    "phonetic": "bæn",
+    "pos": "v.",
+    "meaning_cn": "禁止；取缔；明令禁止",
+    "meaning_en": "to officially forbid something by law or rule",
+    "example": "The city decided to ban cars from the historic centre.",
+    "example_cn": "该市决定禁止汽车进入历史城区。",
+    "collins": null,
+    "frq": 1450,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0027",
+    "word": "employ",
+    "phonetic": "ɪmˈplɔɪ",
+    "pos": "v.",
+    "meaning_cn": "雇用；聘请；利用；使用",
+    "meaning_en": "to give somebody a job and pay them for their work",
+    "example": "Large firms employ thousands of workers in this region every year.",
+    "example_cn": "大型企业每年在这个地区雇用数千名工人。",
+    "collins": null,
+    "frq": 1450,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0028",
+    "word": "argue",
+    "phonetic": "ˈɑːɡjuː",
+    "pos": "v.",
+    "meaning_cn": "争论；争吵；论证；主张",
+    "meaning_en": "to give reasons for or against something in speech",
+    "example": "They often argue about money, but they never stay angry long.",
+    "example_cn": "他们经常为钱争吵，但从不会生气太久。",
+    "collins": null,
+    "frq": 1500,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0029",
+    "word": "assume",
+    "phonetic": "əˈsjuːm",
+    "pos": "v.",
+    "meaning_cn": "假定；假设；认为；承担",
+    "meaning_en": "to think that something is true without having any proof",
+    "example": "We assume the train will arrive on time, though delays are common.",
+    "example_cn": "我们假定火车会准点到达，尽管晚点是常有的事。",
+    "collins": null,
+    "frq": 1500,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0030",
+    "word": "divide",
+    "phonetic": "dɪˈvaɪd",
+    "pos": "v.",
+    "meaning_cn": "分开；划分；分配；分歧",
+    "meaning_en": "to separate something into two or more parts",
+    "example": "Teachers often divide the class into small groups for reading practice.",
+    "example_cn": "老师们常常把班级分成小组进行阅读练习。",
+    "collins": null,
+    "frq": 1500,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0031",
+    "word": "appreciate",
+    "phonetic": "əˈpriːʃieɪt",
+    "pos": "v.",
+    "meaning_cn": "感激；欣赏；理解",
+    "meaning_en": "to be grateful for something, or to recognize its true value",
+    "example": "I really appreciate all the help you gave me during that hard week.",
+    "example_cn": "我非常感激你在那个艰难的一周里给我的所有帮助。",
+    "collins": null,
+    "frq": 1520,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0032",
+    "word": "deliver",
+    "phonetic": "dɪˈlɪvə(r)",
+    "pos": "v.",
+    "meaning_cn": "递送；交付；投递；发表",
+    "meaning_en": "to take goods or letters to a place or person",
+    "example": "The postman will deliver your heavy parcel before noon tomorrow.",
+    "example_cn": "邮递员明天中午前会把你的重包裹送到。",
+    "collins": null,
+    "frq": 1600,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0033",
+    "word": "destroy",
+    "phonetic": "dɪˈstrɔɪ",
+    "pos": "v.",
+    "meaning_cn": "摧毁；破坏；消灭",
+    "meaning_en": "to damage something so badly that it no longer exists or works",
+    "example": "The heavy floods could destroy hundreds of homes in that village.",
+    "example_cn": "这场大洪水可能摧毁那个村庄数百户人家。",
+    "collins": null,
+    "frq": 1620,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0034",
+    "word": "ensure",
+    "phonetic": "ɪnˈʃʊə",
+    "pos": "v.",
+    "meaning_cn": "确保；保证；担保；使确信",
+    "meaning_en": "to make certain that something happens or is true",
+    "example": "Please ensure that all the windows are closed before you leave.",
+    "example_cn": "离开之前请确保所有的窗户都已关好。",
+    "collins": null,
+    "frq": 1650,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0035",
+    "word": "cancel",
+    "phonetic": "ˈkænsl",
+    "pos": "v.",
+    "meaning_cn": "取消；撤销；废除",
+    "meaning_en": "decide that a planned event or arrangement will not happen",
+    "example": "They had to cancel the outdoor wedding because a violent storm was approaching.",
+    "example_cn": "因为一场猛烈暴风雨即将来临，他们不得不取消户外婚礼。",
+    "collins": null,
+    "frq": 1700,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0036",
+    "word": "convince",
+    "phonetic": "kənˈvɪns",
+    "pos": "v.",
+    "meaning_cn": "说服；劝服；让某人确信",
+    "meaning_en": "to make somebody believe that something is true",
+    "example": "He tried hard to convince his parents that the plan was safe.",
+    "example_cn": "他努力说服父母这个计划是安全的。",
+    "collins": null,
+    "frq": 1700,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0037",
+    "word": "announce",
+    "phonetic": "əˈnaʊns",
+    "pos": "v.",
+    "meaning_cn": "宣布；公布；声明",
+    "meaning_en": "make a public or official statement about something important",
+    "example": "The company will announce its quarterly results at a press conference.",
+    "example_cn": "公司将在新闻发布会上公布季度业绩。",
+    "collins": null,
+    "frq": 1720,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0038",
+    "word": "borrow",
+    "phonetic": "ˈbɒrəʊ",
+    "pos": "v.",
+    "meaning_cn": "借；借入；借用",
+    "meaning_en": "to take something from someone and return it later",
+    "example": "Could I borrow your umbrella until tomorrow morning, please?",
+    "example_cn": "我能借用你的伞到明天早上吗？",
+    "collins": null,
+    "frq": 1750,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0039",
+    "word": "encourage",
+    "phonetic": "ɪnˈkʌrɪdʒ",
+    "pos": "v.",
+    "meaning_cn": "鼓励；激励；鼓舞；支持",
+    "meaning_en": "to give somebody confidence or hope to do something",
+    "example": "Good teachers always encourage students to ask questions in class.",
+    "example_cn": "好老师总是鼓励学生在课堂上提问。",
+    "collins": null,
+    "frq": 1750,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0040",
+    "word": "blame",
+    "phonetic": "bleɪm",
+    "pos": "v.",
+    "meaning_cn": "责备；归咎；把责任推给",
+    "meaning_en": "to say that someone is responsible for a fault",
+    "example": "You should not blame the driver for the sudden road closure.",
+    "example_cn": "你不该因为道路突然封闭而责怪司机。",
+    "collins": null,
+    "frq": 1780,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0041",
+    "word": "arrange",
+    "phonetic": "əˈreɪndʒ",
+    "pos": "v.",
+    "meaning_cn": "安排；筹备；整理；布置",
+    "meaning_en": "to plan or organize something in advance for a purpose",
+    "example": "I will arrange a meeting with the client for next week.",
+    "example_cn": "我会安排下周与客户见面。",
+    "collins": null,
+    "frq": 1800,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0042",
+    "word": "calculate",
+    "phonetic": "ˈkælkjuleɪt",
+    "pos": "v.",
+    "meaning_cn": "计算；估计；打算",
+    "meaning_en": "determine the amount or number of something using mathematics",
+    "example": "Engineers calculate the load each beam can safely support before construction begins.",
+    "example_cn": "工程师们在施工开始前计算每根梁能安全承受的荷载。",
+    "collins": null,
+    "frq": 1800,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0043",
+    "word": "decline",
+    "phonetic": "dɪˈklaɪn",
+    "pos": "v.",
+    "meaning_cn": "下降；衰退；婉拒；谢绝",
+    "meaning_en": "to become smaller or weaker, or to refuse politely",
+    "example": "Sales of the old phone began to decline sharply last year.",
+    "example_cn": "去年这款旧手机的销量开始急剧下降。",
+    "collins": null,
+    "frq": 1800,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0044",
+    "word": "display",
+    "phonetic": "dɪˈspleɪ",
+    "pos": "v.",
+    "meaning_cn": "展示；显示；陈列；表现",
+    "meaning_en": "to show something to people so they can see it",
+    "example": "The museum will display ancient pottery from the Han dynasty next month.",
+    "example_cn": "博物馆下个月将展出汉代的古代陶器。",
+    "collins": null,
+    "frq": 1800,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0045",
+    "word": "collapse",
+    "phonetic": "kəˈlæps",
+    "pos": "v.",
+    "meaning_cn": "倒塌；崩溃；折叠",
+    "meaning_en": "to fall down suddenly, or to fail completely",
+    "example": "The wooden bridge might collapse if too many heavy trucks cross it.",
+    "example_cn": "如果有太多重型卡车通过，这座木桥可能会坍塌。",
+    "collins": null,
+    "frq": 1850,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0046",
+    "word": "adapt",
+    "phonetic": "əˈdæpt",
+    "pos": "v.",
+    "meaning_cn": "适应；改编；调整",
+    "meaning_en": "to change your behaviour to suit a new situation",
+    "example": "It took him months to adapt to the cold northern winter.",
+    "example_cn": "他花了几个月才适应北方寒冷的冬天。",
+    "collins": null,
+    "frq": 1880,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0047",
+    "word": "alter",
+    "phonetic": "ˈɔːltə",
+    "pos": "v.",
+    "meaning_cn": "改变；更改；修改",
+    "meaning_en": "change something slightly, or make it different in some way",
+    "example": "A small change in diet can alter your mood and energy levels.",
+    "example_cn": "饮食上的小改变就能改变你的情绪和精力水平。",
+    "collins": null,
+    "frq": 1920,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0048",
+    "word": "belong",
+    "phonetic": "bɪˈlɒŋ",
+    "pos": "v.",
+    "meaning_cn": "属于；应归入；适合",
+    "meaning_en": "to be owned by someone or be a proper part of something",
+    "example": "These old photographs belong to my grandmother's family album.",
+    "example_cn": "这些旧照片属于我祖母的家庭相册。",
+    "collins": null,
+    "frq": 1950,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0049",
+    "word": "attach",
+    "phonetic": "əˈtætʃ",
+    "pos": "v.",
+    "meaning_cn": "附上；贴上；系上；附加",
+    "meaning_en": "to fasten or join one thing to another thing",
+    "example": "Please attach the receipt to your expense report before sending it.",
+    "example_cn": "寄出之前，请把收据附在你的费用报销单上。",
+    "collins": null,
+    "frq": 2000,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0050",
+    "word": "define",
+    "phonetic": "dɪˈfaɪn",
+    "pos": "v.",
+    "meaning_cn": "定义；界定；明确；解释",
+    "meaning_en": "to explain the exact meaning of a word or idea",
+    "example": "Please define the word freedom in your own simple words.",
+    "example_cn": "请用你自己简单的话来定义自由这个词。",
+    "collins": null,
+    "frq": 2000,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0051",
+    "word": "acquire",
+    "phonetic": "əˈkwaɪə",
+    "pos": "v.",
+    "meaning_cn": "获得；购得；学到",
+    "meaning_en": "to get or obtain something, often through effort over time",
+    "example": "Children acquire their first language without formal lessons at school.",
+    "example_cn": "孩子们不用在学校上正式课程就能习得母语。",
+    "collins": null,
+    "frq": 2050,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0052",
+    "word": "affect",
+    "phonetic": "əˈfekt",
+    "pos": "v.",
+    "meaning_cn": "影响；感动；产生作用",
+    "meaning_en": "produce a change in something or have an emotional effect on someone",
+    "example": "The sudden price rise will affect millions of ordinary families.",
+    "example_cn": "价格的突然上涨将影响数百万普通家庭。",
+    "collins": null,
+    "frq": 2100,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0053",
+    "word": "celebrate",
+    "phonetic": "ˈselɪbreɪt",
+    "pos": "v.",
+    "meaning_cn": "庆祝；庆贺；赞美",
+    "meaning_en": "do something enjoyable to mark a special occasion or success",
+    "example": "The whole team gathered downtown to celebrate their championship victory with a party.",
+    "example_cn": "整个队伍聚集在市中心，用一场聚会庆祝他们夺得冠军。",
+    "collins": null,
+    "frq": 2100,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0054",
+    "word": "cite",
+    "phonetic": "saɪt",
+    "pos": "v.",
+    "meaning_cn": "引用；引证；举例",
+    "meaning_en": "to mention something as evidence or an example",
+    "example": "The researcher chose to cite three recent studies in her final report.",
+    "example_cn": "这位研究员选择在最终报告中引用三项近期研究。",
+    "collins": null,
+    "frq": 2100,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0055",
+    "word": "consist",
+    "phonetic": "kənˈsɪst",
+    "pos": "v.",
+    "meaning_cn": "由若干部分组成；在于",
+    "meaning_en": "to be made up of several different parts or things",
+    "example": "The committee will consist of ten members chosen from different departments.",
+    "example_cn": "该委员会将由来自不同部门的十名成员组成。",
+    "collins": null,
+    "frq": 2100,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0056",
+    "word": "deny",
+    "phonetic": "dɪˈnaɪ",
+    "pos": "v.",
+    "meaning_cn": "否认；否定；拒绝；拒不承认",
+    "meaning_en": "to say that something is not true or refuse a request",
+    "example": "He continues to deny taking the money from the drawer.",
+    "example_cn": "他继续否认从抽屉里拿了钱。",
+    "collins": null,
+    "frq": 2100,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0057",
+    "word": "encounter",
+    "phonetic": "ɪnˈkaʊntə",
+    "pos": "v.",
+    "meaning_cn": "遭遇；偶遇；遇到；经历",
+    "meaning_en": "to meet somebody or something unexpectedly, or to experience a difficulty",
+    "example": "We often encounter many difficulties when learning a foreign language.",
+    "example_cn": "我们学习外语时常常遇到许多困难。",
+    "collins": null,
+    "frq": 2100,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0058",
+    "word": "abandon",
+    "phonetic": "əˈbændən",
+    "pos": "v.",
+    "meaning_cn": "放弃；抛弃；离弃",
+    "meaning_en": "to leave someone or something behind and stop caring for it",
+    "example": "The crew had to abandon the sinking ship before dawn.",
+    "example_cn": "船员们不得不在黎明前弃掉正在下沉的船。",
+    "collins": null,
+    "frq": 2150,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0059",
+    "word": "assist",
+    "phonetic": "əˈsɪst",
+    "pos": "v.",
+    "meaning_cn": "帮助；协助；援助；辅助",
+    "meaning_en": "to help someone do something, especially by doing part of the work",
+    "example": "Two nurses assist the surgeon during every major operation in this hospital.",
+    "example_cn": "在这家医院，每台大手术都由两名护士协助外科医生。",
+    "collins": null,
+    "frq": 2200,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0060",
+    "word": "debate",
+    "phonetic": "dɪˈbeɪt",
+    "pos": "v.",
+    "meaning_cn": "辩论；争论；仔细考虑",
+    "meaning_en": "to discuss a subject formally and argue different opinions",
+    "example": "The students will debate the question of school uniforms today.",
+    "example_cn": "学生们今天将就校服问题展开辩论。",
+    "collins": null,
+    "frq": 2200,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0061",
+    "word": "deserve",
+    "phonetic": "dɪˈzɜːv",
+    "pos": "v.",
+    "meaning_cn": "应得；值得；配得上",
+    "meaning_en": "to have earned something or be worthy of it because of your actions",
+    "example": "After working so hard all year, you deserve a long holiday.",
+    "example_cn": "辛苦工作了一整年，你应该好好休个长假。",
+    "collins": null,
+    "frq": 2240,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0062",
+    "word": "behave",
+    "phonetic": "bɪˈheɪv",
+    "pos": "v.",
+    "meaning_cn": "表现；举止；守规矩",
+    "meaning_en": "to act in a particular way or conduct oneself properly",
+    "example": "Parents often wonder how their children will behave at a formal dinner.",
+    "example_cn": "父母常想知道自己的孩子在一场正式晚宴上会如何表现。",
+    "collins": null,
+    "frq": 2350,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0063",
+    "word": "absorb",
+    "phonetic": "əbˈzɔːb",
+    "pos": "v.",
+    "meaning_cn": "吸收；吸取；使全神贯注",
+    "meaning_en": "to take in a liquid, gas, or other substance gradually",
+    "example": "Dry soil will absorb rainwater much faster than wet clay.",
+    "example_cn": "干燥的土壤吸收雨水比湿黏土快得多。",
+    "collins": null,
+    "frq": 2360,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0064",
+    "word": "advance",
+    "phonetic": "ədˈvɑːns",
+    "pos": "v.",
+    "meaning_cn": "前进；推进；取得进展",
+    "meaning_en": "move forward or help something develop further",
+    "example": "Troops continued to advance through the valley despite heavy rain.",
+    "example_cn": "尽管下着大雨，部队仍继续穿过山谷向前推进。",
+    "collins": null,
+    "frq": 2400,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0065",
+    "word": "correspond",
+    "phonetic": "ˌkɒrəˈspɒnd",
+    "pos": "v.",
+    "meaning_cn": "相符；相当于；通信；一致",
+    "meaning_en": "to match or be similar to something else",
+    "example": "These numbers correspond exactly to the figures in our report.",
+    "example_cn": "这些数字与我们报告中的数据完全吻合。",
+    "collins": null,
+    "frq": 2400,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0066",
+    "word": "defeat",
+    "phonetic": "dɪˈfiːt",
+    "pos": "v.",
+    "meaning_cn": "击败；战胜；打败；挫败",
+    "meaning_en": "to win against somebody in a game, battle or election",
+    "example": "Our team hopes to defeat the champions in the final match.",
+    "example_cn": "我们队希望在决赛中击败冠军。",
+    "collins": null,
+    "frq": 2400,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0067",
+    "word": "accompany",
+    "phonetic": "əˈkʌmpəni",
+    "pos": "v.",
+    "meaning_cn": "陪伴；伴随；陪同",
+    "meaning_en": "to go somewhere with someone as a companion",
+    "example": "Her younger brother will accompany her to the interview tomorrow morning.",
+    "example_cn": "她弟弟明天早上会陪她去面试。",
+    "collins": null,
+    "frq": 2430,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0068",
+    "word": "broadcast",
+    "phonetic": "ˈbrɔːdkɑːst",
+    "pos": "v.",
+    "meaning_cn": "广播；播送；传播",
+    "meaning_en": "to send out a programme on television or radio",
+    "example": "The station will broadcast the match live on Saturday evening.",
+    "example_cn": "该电台将在周六晚上现场直播这场比赛。",
+    "collins": null,
+    "frq": 2450,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0069",
+    "word": "classify",
+    "phonetic": "ˈklæsɪfaɪ",
+    "pos": "v.",
+    "meaning_cn": "分类；归类；划分",
+    "meaning_en": "to put things into groups according to shared qualities",
+    "example": "Librarians classify these old maps according to region, date, and printing style.",
+    "example_cn": "图书管理员按地区、年代和印刷风格为这些旧地图分类。",
+    "collins": null,
+    "frq": 2450,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0070",
+    "word": "engage",
+    "phonetic": "ɪnˈɡeɪdʒ",
+    "pos": "v.",
+    "meaning_cn": "从事；参与；吸引；订婚",
+    "meaning_en": "to take part in something or to attract somebody's interest",
+    "example": "Many university students engage in sports after their classes finish.",
+    "example_cn": "许多大学生下课后参加体育运动。",
+    "collins": null,
+    "frq": 2450,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0071",
+    "word": "assess",
+    "phonetic": "əˈses",
+    "pos": "v.",
+    "meaning_cn": "评估；评定；估价；核定",
+    "meaning_en": "to judge or decide the amount, value, quality, or importance of something",
+    "example": "The teachers assess our progress through weekly tests and detailed written reports.",
+    "example_cn": "老师们通过每周测验和详细的书面报告来评估我们的进步。",
+    "collins": null,
+    "frq": 2500,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0072",
+    "word": "demonstrate",
+    "phonetic": "ˈdemənstreɪt",
+    "pos": "v.",
+    "meaning_cn": "证明；演示；示范；示威",
+    "meaning_en": "to show clearly that something is true or how it works",
+    "example": "The teacher will demonstrate the experiment to the whole class.",
+    "example_cn": "老师将向全班演示这个实验。",
+    "collins": null,
+    "frq": 2500,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0073",
+    "word": "analyse",
+    "phonetic": "ˈænəlaɪz",
+    "pos": "v.",
+    "meaning_cn": "分析；解析；剖析",
+    "meaning_en": "examine something carefully in order to understand its parts or nature",
+    "example": "Scientists will analyse the samples carefully before publishing their final report.",
+    "example_cn": "科学家们会仔细分析这些样本，然后才发表最终报告。",
+    "collins": null,
+    "frq": 2540,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0074",
+    "word": "cope",
+    "phonetic": "kəʊp",
+    "pos": "v.",
+    "meaning_cn": "应对；处理；对付；承受",
+    "meaning_en": "to deal successfully with a difficult situation or problem",
+    "example": "She learned to cope with stress after changing her daily routine.",
+    "example_cn": "她改变日常作息之后学会了应对压力。",
+    "collins": null,
+    "frq": 2600,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0075",
+    "word": "delay",
+    "phonetic": "dɪˈleɪ",
+    "pos": "v.",
+    "meaning_cn": "推迟；耽搁；延误；延期",
+    "meaning_en": "to make something happen later than the planned time",
+    "example": "Heavy rain may delay our flight to Beijing this evening.",
+    "example_cn": "大雨可能会延误我们今晚飞往北京的航班。",
+    "collins": null,
+    "frq": 2600,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0076",
+    "word": "emerge",
+    "phonetic": "ɪˈmɜːdʒ",
+    "pos": "v.",
+    "meaning_cn": "出现；浮现；显露；兴起",
+    "meaning_en": "to appear or come out from somewhere hidden",
+    "example": "New details about the accident continue to emerge several days later.",
+    "example_cn": "事故的新细节在几天后仍不断浮现。",
+    "collins": null,
+    "frq": 2600,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0077",
+    "word": "enhance",
+    "phonetic": "ɪnˈhɑːns",
+    "pos": "v.",
+    "meaning_cn": "提高；增强；增加；改善",
+    "meaning_en": "to increase or improve the quality or value of something",
+    "example": "Regular exercise can greatly enhance the quality of your daily life.",
+    "example_cn": "经常锻炼能极大提高你的日常生活质量。",
+    "collins": null,
+    "frq": 2600,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0078",
+    "word": "bother",
+    "phonetic": "ˈbɒðə",
+    "pos": "v.",
+    "meaning_cn": "打扰；烦扰；操心",
+    "meaning_en": "to annoy someone, or to take the trouble to do something",
+    "example": "Don't let the noise bother you while you are studying.",
+    "example_cn": "你学习的时候别让噪音打扰你。",
+    "collins": null,
+    "frq": 2650,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0079",
+    "word": "adopt",
+    "phonetic": "əˈdɒpt",
+    "pos": "v.",
+    "meaning_cn": "采用；采纳；收养孩子",
+    "meaning_en": "take something as your own or legally raise another person's child",
+    "example": "The company decided to adopt a four-day working week for all staff.",
+    "example_cn": "公司决定对所有员工实行每周四天工作制。",
+    "collins": null,
+    "frq": 2700,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0080",
+    "word": "associate",
+    "phonetic": "əˈsəʊsieɪt",
+    "pos": "v.",
+    "meaning_cn": "联想；联系；关联；交往",
+    "meaning_en": "to connect someone or something in your mind with another person or thing",
+    "example": "Most people associate the smell of coffee with quiet mornings at home.",
+    "example_cn": "大多数人把咖啡的香气与家中安静的清晨联系在一起。",
+    "collins": null,
+    "frq": 2800,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0081",
+    "word": "distribute",
+    "phonetic": "dɪˈstrɪbjuːt",
+    "pos": "v.",
+    "meaning_cn": "分发；分配；分布；散布",
+    "meaning_en": "to give things to a number of people or places",
+    "example": "Volunteers will distribute food and blankets to families after the flood.",
+    "example_cn": "洪水过后，志愿者将向受灾家庭分发食物和毯子。",
+    "collins": null,
+    "frq": 2800,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0082",
+    "word": "arrest",
+    "phonetic": "əˈrest",
+    "pos": "v.",
+    "meaning_cn": "逮捕；拘捕；拘留；阻止",
+    "meaning_en": "to take someone into custody because of a crime",
+    "example": "Police went to arrest the suspect at his home yesterday morning.",
+    "example_cn": "警方昨天上午去他家逮捕了嫌疑人。",
+    "collins": null,
+    "frq": 2900,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0083",
+    "word": "decrease",
+    "phonetic": "dɪˈkriːs",
+    "pos": "v.",
+    "meaning_cn": "减少；降低；减小；下降",
+    "meaning_en": "to become or make something smaller in number or amount",
+    "example": "The number of wild birds continues to decrease across the whole region.",
+    "example_cn": "整个地区野生鸟类的数量持续减少。",
+    "collins": null,
+    "frq": 2900,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0084",
+    "word": "detect",
+    "phonetic": "dɪˈtekt",
+    "pos": "v.",
+    "meaning_cn": "察觉；探测；发现",
+    "meaning_en": "to notice or discover something that is not easy to see",
+    "example": "These machines can detect tiny cracks in the metal airplane wings.",
+    "example_cn": "这些机器能探测出飞机金属机翼上的细小裂缝。",
+    "collins": null,
+    "frq": 2900,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0085",
+    "word": "accomplish",
+    "phonetic": "əˈkʌmplɪʃ",
+    "pos": "v.",
+    "meaning_cn": "完成；实现；达到",
+    "meaning_en": "to succeed in doing or completing something you planned",
+    "example": "The team managed to accomplish the whole project two weeks early.",
+    "example_cn": "团队设法提前两周完成了整个项目。",
+    "collins": null,
+    "frq": 2980,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0086",
+    "word": "assign",
+    "phonetic": "əˈsaɪn",
+    "pos": "v.",
+    "meaning_cn": "分配；分派；指派；布置",
+    "meaning_en": "to give someone a particular job, duty, or piece of work",
+    "example": "The manager will assign each new employee a mentor during the first month.",
+    "example_cn": "经理会在第一个月给每位新员工指派一位导师。",
+    "collins": null,
+    "frq": 3000,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0087",
+    "word": "emphasize",
+    "phonetic": "ˈemfəsaɪz",
+    "pos": "v.",
+    "meaning_cn": "强调；着重；突出；重视",
+    "meaning_en": "to give special importance to something when speaking",
+    "example": "Doctors emphasize the importance of sleep for young students every year.",
+    "example_cn": "医生们每年都强调睡眠对年轻学生的重要性。",
+    "collins": null,
+    "frq": 3000,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0088",
+    "word": "admire",
+    "phonetic": "ədˈmaɪə",
+    "pos": "v.",
+    "meaning_cn": "钦佩；赞赏；高度评价",
+    "meaning_en": "respect and like someone or something very much",
+    "example": "I admire her courage in speaking up against the unfair rule.",
+    "example_cn": "我钦佩她敢于直言反对那条不公正规定的勇气。",
+    "collins": null,
+    "frq": 3100,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0089",
+    "word": "elect",
+    "phonetic": "ɪˈlekt",
+    "pos": "v.",
+    "meaning_cn": "选举；推选；选择；决定",
+    "meaning_en": "to choose someone for an official position by voting",
+    "example": "Members will elect a new chairman at the meeting next Friday.",
+    "example_cn": "成员们将在下周五的会议上选举新主席。",
+    "collins": null,
+    "frq": 3100,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0090",
+    "word": "acknowledge",
+    "phonetic": "əkˈnɒlɪdʒ",
+    "pos": "v.",
+    "meaning_cn": "承认；确认；感谢",
+    "meaning_en": "to admit that something is true or to confirm receipt",
+    "example": "She refused to acknowledge her mistake in front of the class.",
+    "example_cn": "她拒绝在全班面前承认自己的错误。",
+    "collins": null,
+    "frq": 3150,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0091",
+    "word": "boost",
+    "phonetic": "buːst",
+    "pos": "v.",
+    "meaning_cn": "促进；提高；推动",
+    "meaning_en": "to increase or improve something and make it more successful",
+    "example": "Lower prices should boost sales in the final quarter of the year.",
+    "example_cn": "降低价格应该能提升今年最后一个季度的销售额。",
+    "collins": null,
+    "frq": 3150,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0092",
+    "word": "assure",
+    "phonetic": "əˈʃʊə(r)",
+    "pos": "v.",
+    "meaning_cn": "保证；担保；确保；打消疑虑",
+    "meaning_en": "to tell someone confidently that something is true or will happen",
+    "example": "I can assure you that the repairs will be finished by Friday.",
+    "example_cn": "我可以向你保证，维修工作会在周五之前完成。",
+    "collins": null,
+    "frq": 3200,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0093",
+    "word": "dismiss",
+    "phonetic": "dɪsˈmɪs",
+    "pos": "v.",
+    "meaning_cn": "解雇；不予考虑；驳回",
+    "meaning_en": "to decide that something or someone is not important",
+    "example": "The manager decided to dismiss two workers after the serious safety incident.",
+    "example_cn": "经理在严重的安全事故后决定解雇两名工人。",
+    "collins": null,
+    "frq": 3200,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0094",
+    "word": "endure",
+    "phonetic": "ɪnˈdjʊə",
+    "pos": "v.",
+    "meaning_cn": "忍受；忍耐；持久；持续",
+    "meaning_en": "to suffer something painful or difficult patiently over a long time",
+    "example": "She had to endure great pain after the accident last year.",
+    "example_cn": "去年事故之后她不得不忍受巨大的痛苦。",
+    "collins": null,
+    "frq": 3200,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0095",
+    "word": "accelerate",
+    "phonetic": "əkˈseləreɪt",
+    "pos": "v.",
+    "meaning_cn": "加速；加快；促进",
+    "meaning_en": "to make something happen faster or move more quickly",
+    "example": "Government policy could accelerate the shift toward clean energy.",
+    "example_cn": "政府政策可能会加快向清洁能源的转变。",
+    "collins": null,
+    "frq": 3240,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0096",
+    "word": "eliminate",
+    "phonetic": "ɪˈlɪmɪneɪt",
+    "pos": "v.",
+    "meaning_cn": "消除；淘汰；排除；消灭",
+    "meaning_en": "to remove something completely or get rid of it",
+    "example": "The new system should eliminate most errors in our monthly reports.",
+    "example_cn": "新系统应该能消除我们月度报告中的大部分错误。",
+    "collins": null,
+    "frq": 3300,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0097",
+    "word": "chase",
+    "phonetic": "tʃeɪs",
+    "pos": "v.",
+    "meaning_cn": "追逐；追赶；追求",
+    "meaning_en": "to run after someone or something in order to catch them",
+    "example": "The excited dog loves to chase squirrels around the park every morning.",
+    "example_cn": "那只兴奋的狗喜欢每天早上在公园里追松鼠。",
+    "collins": null,
+    "frq": 3400,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0098",
+    "word": "differ",
+    "phonetic": "ˈdɪfə",
+    "pos": "v.",
+    "meaning_cn": "不同；相异；有分歧",
+    "meaning_en": "to be unlike something or somebody else in some way",
+    "example": "Their opinions differ greatly on how to spend the extra money.",
+    "example_cn": "他们在如何花这笔额外的钱上意见大不相同。",
+    "collins": null,
+    "frq": 3410,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0099",
+    "word": "advertise",
+    "phonetic": "ˈædvətaɪz",
+    "pos": "v.",
+    "meaning_cn": "做广告；宣传；登广告",
+    "meaning_en": "tell the public about a product or job in order to attract them",
+    "example": "They advertise their new phone on almost every social platform.",
+    "example_cn": "他们几乎在每个社交平台上为那款新手机做广告。",
+    "collins": null,
+    "frq": 3500,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0100",
+    "word": "distinguish",
+    "phonetic": "dɪˈstɪŋɡwɪʃ",
+    "pos": "v.",
+    "meaning_cn": "区分；辨别；分辨；使突出",
+    "meaning_en": "to recognize the difference between two or more things",
+    "example": "Young children often cannot distinguish between fantasy and reality very clearly.",
+    "example_cn": "幼儿常常无法很清楚地分辨幻想与现实。",
+    "collins": null,
+    "frq": 3500,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0101",
+    "word": "dedicate",
+    "phonetic": "ˈdedɪkeɪt",
+    "pos": "v.",
+    "meaning_cn": "奉献；献身；致力于；题献",
+    "meaning_en": "to give your time and effort completely to something important",
+    "example": "She chose to dedicate her life to helping poor children.",
+    "example_cn": "她选择把一生奉献给帮助贫困儿童。",
+    "collins": null,
+    "frq": 3600,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0102",
+    "word": "adjust",
+    "phonetic": "əˈdʒʌst",
+    "pos": "v.",
+    "meaning_cn": "调整；调节；适应环境",
+    "meaning_en": "change something slightly to make it more suitable or correct",
+    "example": "You can adjust the height of the chair to suit your desk.",
+    "example_cn": "你可以调整椅子的高度，好配合你的书桌。",
+    "collins": null,
+    "frq": 3800,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0103",
+    "word": "dominate",
+    "phonetic": "ˈdɒmɪneɪt",
+    "pos": "v.",
+    "meaning_cn": "支配；控制；主导；占优势",
+    "meaning_en": "to control or have power over someone or something",
+    "example": "One large company continues to dominate the local mobile phone market.",
+    "example_cn": "一家大公司继续主导着当地的手机市场。",
+    "collins": null,
+    "frq": 3800,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0104",
+    "word": "decorate",
+    "phonetic": "ˈdekəreɪt",
+    "pos": "v.",
+    "meaning_cn": "装饰；布置；点缀；美化",
+    "meaning_en": "to make something look more attractive by adding things to it",
+    "example": "We will decorate the living room with flowers before the party.",
+    "example_cn": "我们会在聚会前用鲜花装饰客厅。",
+    "collins": null,
+    "frq": 4200,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0105",
+    "word": "amaze",
+    "phonetic": "əˈmeɪz",
+    "pos": "v.",
+    "meaning_cn": "令人惊奇；令人惊叹",
+    "meaning_en": "surprise someone very much in an impressive or unexpected way",
+    "example": "The magician's final trick continued to amaze the entire audience.",
+    "example_cn": "魔术师最后的戏法让全场观众惊叹不已。",
+    "collins": null,
+    "frq": 4480,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0106",
+    "word": "assemble",
+    "phonetic": "əˈsembl",
+    "pos": "v.",
+    "meaning_cn": "集合；聚集；装配；组装",
+    "meaning_en": "to bring people or parts together into one group",
+    "example": "Workers assemble the cars from parts made in several countries.",
+    "example_cn": "工人们用来自几个国家的零件组装汽车。",
+    "collins": null,
+    "frq": 4500,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0107",
+    "word": "disappoint",
+    "phonetic": "ˌdɪsəˈpɔɪnt",
+    "pos": "v.",
+    "meaning_cn": "让人失望；辜负期望",
+    "meaning_en": "to make somebody sad because something was not as good as hoped",
+    "example": "I really don't want to disappoint my parents with such low grades.",
+    "example_cn": "我真不想用这么差的成绩让父母失望。",
+    "collins": null,
+    "frq": 4520,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0108",
+    "word": "advocate",
+    "phonetic": "ˈædvəkeɪt",
+    "pos": "v.",
+    "meaning_cn": "提倡；主张；大力支持",
+    "meaning_en": "publicly support an idea or plan and argue for it",
+    "example": "Doctors advocate regular exercise as the best way to stay healthy.",
+    "example_cn": "医生提倡把规律锻炼当作保持健康的最佳方式。",
+    "collins": null,
+    "frq": 4600,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0109",
+    "word": "betray",
+    "phonetic": "bɪˈtreɪ",
+    "pos": "v.",
+    "meaning_cn": "背叛；出卖；泄露",
+    "meaning_en": "to be disloyal to someone who trusts you",
+    "example": "He would never betray a friend for money or promotion.",
+    "example_cn": "他绝不会为了金钱或升职而背叛朋友。",
+    "collins": null,
+    "frq": 4820,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0110",
+    "word": "cease",
+    "phonetic": "siːs",
+    "pos": "v.",
+    "meaning_cn": "停止；终止",
+    "meaning_en": "stop happening or doing something, especially for a period",
+    "example": "The heavy rain will cease at dawn, so the match can start.",
+    "example_cn": "大雨终于在黎明时停止，因此比赛被取消了。",
+    "collins": null,
+    "frq": 5200,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0111",
+    "word": "astonish",
+    "phonetic": "əˈstɒnɪʃ",
+    "pos": "v.",
+    "meaning_cn": "令人十分惊讶；使人震惊",
+    "meaning_en": "to surprise someone very much with something unexpected",
+    "example": "The boy's sudden talent for chess seemed to astonish everyone at the club.",
+    "example_cn": "这个男孩突然展现的象棋天赋似乎让俱乐部的每个人都大为惊讶。",
+    "collins": null,
+    "frq": 6500,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0112",
+    "word": "account",
+    "phonetic": "əˈkaʊnt",
+    "pos": "n.",
+    "meaning_cn": "账户；账目；描述",
+    "meaning_en": "a record of money or a written description of events",
+    "example": "She opened a savings account at the bank near her office.",
+    "example_cn": "她在办公室附近的银行开了一个储蓄账户。",
+    "collins": null,
+    "frq": 690,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0113",
+    "word": "character",
+    "phonetic": "ˈkærəktə",
+    "pos": "n.",
+    "meaning_cn": "性格；角色；汉字",
+    "meaning_en": "the qualities that make a person or place distinct",
+    "example": "The main character in this novel is a brave young village teacher.",
+    "example_cn": "这部小说的主角是一位勇敢的年轻乡村教师。",
+    "collins": null,
+    "frq": 700,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0114",
+    "word": "ability",
+    "phonetic": "əˈbɪləti",
+    "pos": "n.",
+    "meaning_cn": "能力；才能；本领",
+    "meaning_en": "the power or skill needed to do something well",
+    "example": "Her ability to stay calm impressed everyone during the crisis.",
+    "example_cn": "她在危机中保持冷静的能力让所有人印象深刻。",
+    "collins": null,
+    "frq": 780,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0115",
+    "word": "access",
+    "phonetic": "ˈækses",
+    "pos": "n.",
+    "meaning_cn": "通道；进入；使用权；访问",
+    "meaning_en": "the right or opportunity to enter or use something",
+    "example": "Students need a valid card to gain access to the library after dark.",
+    "example_cn": "学生们需要有效证件才能在夜间进入图书馆。",
+    "collins": null,
+    "frq": 812,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0116",
+    "word": "challenge",
+    "phonetic": "ˈtʃælɪndʒ",
+    "pos": "n.",
+    "meaning_cn": "挑战；难题；质疑",
+    "meaning_en": "something difficult that tests your ability or determination",
+    "example": "Learning a new language is a challenge that many people genuinely enjoy.",
+    "example_cn": "学习一门新语言是许多人真心喜欢的挑战。",
+    "collins": null,
+    "frq": 850,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0117",
+    "word": "approach",
+    "phonetic": "əˈprəʊtʃ",
+    "pos": "n.",
+    "meaning_cn": "方法；接近；途径",
+    "meaning_en": "a way of dealing with something, or the act of coming nearer",
+    "example": "The teacher tried a completely new approach to help weaker students improve.",
+    "example_cn": "这位老师尝试了一种全新的方法来帮助较弱的学生提高。",
+    "collins": null,
+    "frq": 880,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0118",
+    "word": "amount",
+    "phonetic": "əˈmaʊnt",
+    "pos": "n.",
+    "meaning_cn": "数量；总额；金额",
+    "meaning_en": "how much there is of something, or a total sum",
+    "example": "A large amount of money was spent on repairing the old bridge.",
+    "example_cn": "修缮这座旧桥花了一大笔钱。",
+    "collins": null,
+    "frq": 890,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0119",
+    "word": "attitude",
+    "phonetic": "ˈætɪtjuːd",
+    "pos": "n.",
+    "meaning_cn": "态度；看法",
+    "meaning_en": "the way a person thinks or feels about something",
+    "example": "His positive attitude helped the whole group get through a tough week.",
+    "example_cn": "他积极的态度帮助整个团队度过了艰难的一周。",
+    "collins": null,
+    "frq": 1000,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0120",
+    "word": "damage",
+    "phonetic": "ˈdæmɪdʒ",
+    "pos": "n.",
+    "meaning_cn": "损害；破坏；损失；损坏",
+    "meaning_en": "harm that makes something less useful or valuable",
+    "example": "The storm caused serious damage to several houses near the coast.",
+    "example_cn": "暴风雨对海岸附近的几所房屋造成了严重损坏。",
+    "collins": null,
+    "frq": 1000,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0121",
+    "word": "benefit",
+    "phonetic": "ˈbenɪfɪt",
+    "pos": "n.",
+    "meaning_cn": "好处；利益；救济金",
+    "meaning_en": "an advantage or profit gained from something",
+    "example": "Regular exercise brings a lasting benefit to both body and mind.",
+    "example_cn": "经常锻炼对身心都有持久的益处。",
+    "collins": null,
+    "frq": 1120,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0122",
+    "word": "accident",
+    "phonetic": "ˈæksɪdənt",
+    "pos": "n.",
+    "meaning_cn": "事故；意外事件；偶然",
+    "meaning_en": "an unfortunate event that happens unexpectedly and causes damage",
+    "example": "The traffic accident near the bridge delayed hundreds of commuters this morning.",
+    "example_cn": "桥附近的交通事故今早让数百名通勤者延误了。",
+    "collins": null,
+    "frq": 1150,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0123",
+    "word": "circumstance",
+    "phonetic": "ˈsɜːkəmstəns",
+    "pos": "n.",
+    "meaning_cn": "情况；情形；条件",
+    "meaning_en": "a fact or condition that affects a situation or event",
+    "example": "Under no circumstance should you open that door alone.",
+    "example_cn": "在困难的境况下，人们往往会显露出真实的品格和内在的力量。",
+    "collins": null,
+    "frq": 1200,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0124",
+    "word": "balance",
+    "phonetic": "ˈbæləns",
+    "pos": "n.",
+    "meaning_cn": "平衡；余额；均衡",
+    "meaning_en": "a state in which weight or forces are evenly distributed",
+    "example": "Losing her balance on the icy path, she grabbed the railing.",
+    "example_cn": "在结冰的小路上失去平衡时，她一把抓住了栏杆。",
+    "collins": null,
+    "frq": 1280,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0125",
+    "word": "career",
+    "phonetic": "kəˈrɪə(r)",
+    "pos": "n.",
+    "meaning_cn": "职业；生涯；事业",
+    "meaning_en": "the job or series of jobs a person does during working life",
+    "example": "He gave up a stable banking career to open a small bakery.",
+    "example_cn": "他放弃了稳定的银行业职业，去开一家小面包店。",
+    "collins": null,
+    "frq": 1300,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0126",
+    "word": "basis",
+    "phonetic": "ˈbeɪsɪs",
+    "pos": "n.",
+    "meaning_cn": "基础；根据；基准",
+    "meaning_en": "the main principle or foundation on which something rests",
+    "example": "Their friendship rests on a basis of complete mutual trust.",
+    "example_cn": "他们的友谊建立在完全相互信任的基础之上。",
+    "collins": null,
+    "frq": 1380,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0127",
+    "word": "authority",
+    "phonetic": "ɔːˈθɒrəti",
+    "pos": "n.",
+    "meaning_cn": "权威；权力；当局",
+    "meaning_en": "the power to give orders or make official decisions",
+    "example": "The local authority finally approved plans for a new public library.",
+    "example_cn": "当地当局最终批准了新建公共图书馆的计划。",
+    "collins": null,
+    "frq": 1400,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0128",
+    "word": "award",
+    "phonetic": "əˈwɔːd",
+    "pos": "n.",
+    "meaning_cn": "奖；奖项；裁定",
+    "meaning_en": "a prize given to someone for an achievement or victory",
+    "example": "The young scientist received an award for her research on clean energy.",
+    "example_cn": "这位年轻科学家因清洁能源研究而获奖。",
+    "collins": null,
+    "frq": 1500,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0129",
+    "word": "campaign",
+    "phonetic": "kæmˈpeɪn",
+    "pos": "n.",
+    "meaning_cn": "运动；战役；竞选活动",
+    "meaning_en": "organized series of actions intended to achieve a particular result",
+    "example": "The charity launched a nationwide campaign to improve rural children's access to clean water.",
+    "example_cn": "该慈善机构发起了一场全国性运动，以改善农村儿童获得清洁水的条件。",
+    "collins": null,
+    "frq": 1500,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0130",
+    "word": "chemical",
+    "phonetic": "ˈkemɪkl",
+    "pos": "n.",
+    "meaning_cn": "化学品；化学物质",
+    "meaning_en": "a substance produced by or used in chemistry",
+    "example": "Farmers here use far less chemical on their crops than before.",
+    "example_cn": "这里的农民在庄稼上使用的化学品比以前少得多。",
+    "collins": null,
+    "frq": 1500,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0131",
+    "word": "aspect",
+    "phonetic": "ˈæspekt",
+    "pos": "n.",
+    "meaning_cn": "方面；层面；外观；面貌",
+    "meaning_en": "one part or feature of a situation, idea, or problem",
+    "example": "We must consider every aspect of the plan before signing it.",
+    "example_cn": "签字之前，我们必须考虑这个计划的每个方面。",
+    "collins": null,
+    "frq": 1600,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0132",
+    "word": "barrier",
+    "phonetic": "ˈbæriə(r)",
+    "pos": "n.",
+    "meaning_cn": "屏障；障碍；关卡",
+    "meaning_en": "something that blocks movement or prevents progress",
+    "example": "Language remains the biggest barrier for many new immigrants.",
+    "example_cn": "对许多新移民来说，语言仍是最大的障碍。",
+    "collins": null,
+    "frq": 1620,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0133",
+    "word": "budget",
+    "phonetic": "ˈbʌdʒɪt",
+    "pos": "n.",
+    "meaning_cn": "预算；经费；预算案",
+    "meaning_en": "a plan of how much money you can spend",
+    "example": "Our monthly budget leaves little room for eating out.",
+    "example_cn": "我们每月的预算几乎没有外出就餐的余地。",
+    "collins": null,
+    "frq": 1680,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0134",
+    "word": "advantage",
+    "phonetic": "ədˈvɑːntɪdʒ",
+    "pos": "n.",
+    "meaning_cn": "优势；好处；有利条件",
+    "meaning_en": "something that helps you or puts you in a better position",
+    "example": "Speaking two languages gives her a real advantage at work.",
+    "example_cn": "会说两种语言让她在工作中拥有真正的优势。",
+    "collins": null,
+    "frq": 1750,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0135",
+    "word": "border",
+    "phonetic": "ˈbɔːdə",
+    "pos": "n.",
+    "meaning_cn": "边界；国界；边缘",
+    "meaning_en": "the line dividing two countries or areas",
+    "example": "They crossed the border into France just before midnight.",
+    "example_cn": "他们在午夜前越过边界进入法国。",
+    "collins": null,
+    "frq": 1800,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0136",
+    "word": "absence",
+    "phonetic": "ˈæbsəns",
+    "pos": "n.",
+    "meaning_cn": "缺席；不在；缺乏",
+    "meaning_en": "the state of being away from a place or person",
+    "example": "His long absence from class worried all of his teachers.",
+    "example_cn": "他长期缺课让所有老师都很担心。",
+    "collins": null,
+    "frq": 1820,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0137",
+    "word": "capacity",
+    "phonetic": "kəˈpæsəti",
+    "pos": "n.",
+    "meaning_cn": "容量；能力；职位",
+    "meaning_en": "the maximum amount that something can contain or produce",
+    "example": "The new stadium has a seating capacity of about sixty thousand people.",
+    "example_cn": "这座新体育场的座位容量约为六万人。",
+    "collins": null,
+    "frq": 1900,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0138",
+    "word": "core",
+    "phonetic": "kɔː(r)",
+    "pos": "n.",
+    "meaning_cn": "核心；要点；精髓；果心",
+    "meaning_en": "the central and most important part of something",
+    "example": "Honesty lies at the very core of every good friendship.",
+    "example_cn": "诚实是每一段良好友谊的核心。",
+    "collins": null,
+    "frq": 1900,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0139",
+    "word": "appeal",
+    "phonetic": "əˈpiːl",
+    "pos": "n.",
+    "meaning_cn": "吸引力；呼吁；上诉",
+    "meaning_en": "a quality that attracts people, or a serious request for help",
+    "example": "The charity launched an urgent appeal to raise money for homeless families.",
+    "example_cn": "这家慈善机构发起了紧急呼吁，为无家可归的家庭筹款。",
+    "collins": null,
+    "frq": 1950,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0140",
+    "word": "candidate",
+    "phonetic": "ˈkændɪdət",
+    "pos": "n.",
+    "meaning_cn": "候选人；申请人；考生",
+    "meaning_en": "person who is applying for a job or competing for a position",
+    "example": "Each candidate for the teaching post must give a short demonstration lesson.",
+    "example_cn": "每位申请该教职的候选人都必须上一节简短的示范课。",
+    "collins": null,
+    "frq": 2000,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0141",
+    "word": "channel",
+    "phonetic": "ˈtʃænl",
+    "pos": "n.",
+    "meaning_cn": "频道；渠道；海峡",
+    "meaning_en": "a television station or a way of communicating information",
+    "example": "This television channel broadcasts the evening news in three different languages.",
+    "example_cn": "这个电视频道用三种不同的语言播报晚间新闻。",
+    "collins": null,
+    "frq": 2000,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0142",
+    "word": "champion",
+    "phonetic": "ˈtʃæmpiən",
+    "pos": "n.",
+    "meaning_cn": "冠军；捍卫者；拥护者",
+    "meaning_en": "a person who has won a competition or fights for a cause",
+    "example": "She became the world champion after training hard for almost ten years.",
+    "example_cn": "经过近十年的刻苦训练，她成为了世界冠军。",
+    "collins": null,
+    "frq": 2100,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0143",
+    "word": "doubt",
+    "phonetic": "daʊt",
+    "pos": "n.",
+    "meaning_cn": "怀疑；疑问；疑虑；疑惑",
+    "meaning_en": "a feeling of not being certain about something",
+    "example": "There is real doubt about whether the project can finish on time.",
+    "example_cn": "关于这个项目能否按时完成，确实存在疑问。",
+    "collins": null,
+    "frq": 2200,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0144",
+    "word": "chapter",
+    "phonetic": "ˈtʃæptə",
+    "pos": "n.",
+    "meaning_cn": "章节；时期；阶段",
+    "meaning_en": "a main division of a book or a period in history",
+    "example": "I read the first chapter twice because the story was so gripping.",
+    "example_cn": "我把第一章读了两遍，因为故事太扣人心弦了。",
+    "collins": null,
+    "frq": 2300,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0145",
+    "word": "ceremony",
+    "phonetic": "ˈserəməni",
+    "pos": "n.",
+    "meaning_cn": "典礼；仪式；礼节",
+    "meaning_en": "a formal public event held to mark an important occasion",
+    "example": "The graduation ceremony lasted nearly three hours and made everyone quite emotional.",
+    "example_cn": "毕业典礼持续了将近三个小时，让每个人都十分激动。",
+    "collins": null,
+    "frq": 2400,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0146",
+    "word": "architecture",
+    "phonetic": "ˈɑːkɪtektʃə",
+    "pos": "n.",
+    "meaning_cn": "建筑学；建筑风格；结构",
+    "meaning_en": "the art or study of designing buildings and other structures",
+    "example": "She studied architecture in Rome and now designs public libraries.",
+    "example_cn": "她在罗马学习建筑学，现在设计公共图书馆。",
+    "collins": null,
+    "frq": 2600,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0147",
+    "word": "atmosphere",
+    "phonetic": "ˈætməsfɪə(r)",
+    "pos": "n.",
+    "meaning_cn": "大气；大气层；气氛；氛围",
+    "meaning_en": "the mixture of gases around the earth, or the mood of a place",
+    "example": "The candlelit restaurant had a warm, romantic atmosphere that pleased every guest.",
+    "example_cn": "这家烛光餐厅有着温暖浪漫的氛围，令每位客人都感到愉悦。",
+    "collins": null,
+    "frq": 2600,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0148",
+    "word": "charity",
+    "phonetic": "ˈtʃærəti",
+    "pos": "n.",
+    "meaning_cn": "慈善；慈善机构",
+    "meaning_en": "an organization that helps people in need",
+    "example": "The charity provides free meals to homeless people every single night.",
+    "example_cn": "该慈善机构每天晚上为无家可归的人提供免费餐食。",
+    "collins": null,
+    "frq": 2600,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0149",
+    "word": "burden",
+    "phonetic": "ˈbɜːdn",
+    "pos": "n.",
+    "meaning_cn": "负担；重担；责任",
+    "meaning_en": "a heavy load or a difficult duty you must bear",
+    "example": "Caring for three children alone is a heavy burden for her.",
+    "example_cn": "独自照顾三个孩子对她来说是沉重的负担。",
+    "collins": null,
+    "frq": 2680,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0150",
+    "word": "ambition",
+    "phonetic": "æmˈbɪʃn",
+    "pos": "n.",
+    "meaning_cn": "雄心；抱负；野心",
+    "meaning_en": "a strong desire to achieve success or reach a particular goal",
+    "example": "Her greatest ambition is to become a doctor and help poor families.",
+    "example_cn": "她最大的抱负是成为一名医生，帮助贫困家庭。",
+    "collins": null,
+    "frq": 2760,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0151",
+    "word": "draft",
+    "phonetic": "drɑːft",
+    "pos": "n.",
+    "meaning_cn": "草稿；草案；初稿；汇票",
+    "meaning_en": "an early version of a piece of writing or plan",
+    "example": "She emailed the first draft of her report to the editor.",
+    "example_cn": "她把报告的第一稿通过电子邮件发给了编辑。",
+    "collins": null,
+    "frq": 2900,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0152",
+    "word": "accent",
+    "phonetic": "ˈæksent",
+    "pos": "n.",
+    "meaning_cn": "口音；重音；强调",
+    "meaning_en": "the way people from a place pronounce words",
+    "example": "After ten years in Texas he still had a slight accent.",
+    "example_cn": "在得州待了十年后，他说话仍带一点口音。",
+    "collins": null,
+    "frq": 2970,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0153",
+    "word": "avenue",
+    "phonetic": "ˈævənuː",
+    "pos": "n.",
+    "meaning_cn": "大街；途径",
+    "meaning_en": "a wide street in a town, or a way of achieving something",
+    "example": "They strolled along a quiet avenue lined with old maple trees.",
+    "example_cn": "他们沿着一条两旁长满老枫树的安静大街漫步。",
+    "collins": null,
+    "frq": 3000,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0154",
+    "word": "agriculture",
+    "phonetic": "ˈæɡrɪkʌltʃə",
+    "pos": "n.",
+    "meaning_cn": "农业；农学；农艺",
+    "meaning_en": "the practice and science of farming, including crops and livestock",
+    "example": "Agriculture remains the main source of income for people in this region.",
+    "example_cn": "在这一地区，农业仍是人们主要的收入来源。",
+    "collins": null,
+    "frq": 3050,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0155",
+    "word": "adventure",
+    "phonetic": "ədˈventʃə",
+    "pos": "n.",
+    "meaning_cn": "冒险；奇遇；冒险活动",
+    "meaning_en": "an exciting and sometimes dangerous experience or journey",
+    "example": "Their sailing trip across the Pacific turned into a wild adventure.",
+    "example_cn": "他们横渡太平洋的航行变成了一场狂野的冒险。",
+    "collins": null,
+    "frq": 3300,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0156",
+    "word": "athlete",
+    "phonetic": "ˈæθliːt",
+    "pos": "n.",
+    "meaning_cn": "运动员；体育健儿；竞技者",
+    "meaning_en": "a person who is good at sports, especially running, jumping, or throwing",
+    "example": "Every athlete on the team trains for at least three hours each morning.",
+    "example_cn": "队里的每位运动员每天早上至少训练三个小时。",
+    "collins": null,
+    "frq": 3500,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0157",
+    "word": "appetite",
+    "phonetic": "ˈæpɪtaɪt",
+    "pos": "n.",
+    "meaning_cn": "食欲；欲望",
+    "meaning_en": "the natural desire to eat food, or a strong wish for something",
+    "example": "A long walk in the cold air gave him a healthy appetite for dinner.",
+    "example_cn": "在冷空气中长时间散步让他晚餐时食欲大增。",
+    "collins": null,
+    "frq": 3900,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0158",
+    "word": "applause",
+    "phonetic": "əˈplɔːz",
+    "pos": "n.",
+    "meaning_cn": "掌声；喝彩",
+    "meaning_en": "the sound of many people clapping to show approval or enjoyment",
+    "example": "The audience burst into loud applause as the singer left the stage.",
+    "example_cn": "歌手离开舞台时，观众爆发出响亮的掌声。",
+    "collins": null,
+    "frq": 4600,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0159",
+    "word": "available",
+    "phonetic": "əˈveɪləbl",
+    "pos": "adj.",
+    "meaning_cn": "可获得的；有空的",
+    "meaning_en": "able to be used, obtained, or reached by someone",
+    "example": "Tickets are still available online until Friday, so book yours soon.",
+    "example_cn": "网上售票持续到周五，所以请尽快预订。",
+    "collins": null,
+    "frq": 1100,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0160",
+    "word": "aware",
+    "phonetic": "əˈweə",
+    "pos": "adj.",
+    "meaning_cn": "意识到的；知道的",
+    "meaning_en": "knowing that something exists or is happening",
+    "example": "Most people are now aware of how plastic waste harms ocean life.",
+    "example_cn": "现在大多数人都意识到塑料垃圾如何危害海洋生物。",
+    "collins": null,
+    "frq": 1200,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0161",
+    "word": "appropriate",
+    "phonetic": "əˈprəʊpriət",
+    "pos": "adj.",
+    "meaning_cn": "适当的；合适的",
+    "meaning_en": "suitable or right for a particular situation, person, or purpose",
+    "example": "Jeans are hardly appropriate for such a formal job interview.",
+    "example_cn": "牛仔裤对于如此正式的求职面试来说很不合适。",
+    "collins": null,
+    "frq": 1250,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0162",
+    "word": "academic",
+    "phonetic": "ˌækəˈdemɪk",
+    "pos": "adj.",
+    "meaning_cn": "学术的；学业的；纯理论的",
+    "meaning_en": "relating to education, schools, or scholarly study and research",
+    "example": "Her academic performance improved a lot after she joined a study group.",
+    "example_cn": "加入学习小组后，她的学业成绩提高了很多。",
+    "collins": null,
+    "frq": 1290,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0163",
+    "word": "absolute",
+    "phonetic": "ˈæbsəluːt",
+    "pos": "adj.",
+    "meaning_cn": "绝对的；完全的；确实的",
+    "meaning_en": "complete and total, without any limit or doubt",
+    "example": "The new manager demanded absolute loyalty from every team member.",
+    "example_cn": "新经理要求每位团队成员给予绝对忠诚。",
+    "collins": null,
+    "frq": 1450,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0164",
+    "word": "brief",
+    "phonetic": "briːf",
+    "pos": "adj.",
+    "meaning_cn": "简短的；短暂的",
+    "meaning_en": "lasting only a short time, or using few words",
+    "example": "He gave a brief talk about safety before the flight.",
+    "example_cn": "他在飞行前做了一个关于安全的简短讲话。",
+    "collins": null,
+    "frq": 1520,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0165",
+    "word": "capable",
+    "phonetic": "ˈkeɪpəbl",
+    "pos": "adj.",
+    "meaning_cn": "有能力的；能胜任的",
+    "meaning_en": "having the ability or skill needed to do something well",
+    "example": "She is perfectly capable of managing the whole department without any outside help.",
+    "example_cn": "她完全有能力在没有外界帮助的情况下管理整个部门。",
+    "collins": null,
+    "frq": 1600,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0166",
+    "word": "annual",
+    "phonetic": "ˈænjuəl",
+    "pos": "adj.",
+    "meaning_cn": "每年的；年度的；一年一次的",
+    "meaning_en": "happening once every year, or relating to a single year",
+    "example": "The school holds its annual sports meeting in early October.",
+    "example_cn": "学校每年十月初举行运动会。",
+    "collins": null,
+    "frq": 2060,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0167",
+    "word": "apparent",
+    "phonetic": "əˈpærənt",
+    "pos": "adj.",
+    "meaning_cn": "明显的；表面上的",
+    "meaning_en": "easy to see or understand, or seeming true but possibly not real",
+    "example": "It soon became apparent that nobody had read the instructions carefully.",
+    "example_cn": "很快就可以看出，没有人仔细读过说明。",
+    "collins": null,
+    "frq": 2150,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0168",
+    "word": "accurate",
+    "phonetic": "ˈækjərət",
+    "pos": "adj.",
+    "meaning_cn": "准确的；精确的；正确无误的",
+    "meaning_en": "correct and exact in every detail, without any mistakes",
+    "example": "The weather forecast proved surprisingly accurate for the whole weekend.",
+    "example_cn": "这个天气预报整个周末都出乎意料地准确。",
+    "collins": null,
+    "frq": 2180,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0169",
+    "word": "ancient",
+    "phonetic": "ˈeɪnʃənt",
+    "pos": "adj.",
+    "meaning_cn": "古代的；古老的；年代久远的",
+    "meaning_en": "belonging to a period of history long ago; very old",
+    "example": "We wandered through the ancient streets of the town at sunrise.",
+    "example_cn": "日出时我们漫步在这座小镇古老的街道上。",
+    "collins": null,
+    "frq": 2180,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0170",
+    "word": "brilliant",
+    "phonetic": "ˈbrɪliənt",
+    "pos": "adj.",
+    "meaning_cn": "明亮的；杰出的；极好的",
+    "meaning_en": "extremely clever, impressive, or bright in colour",
+    "example": "Her brilliant performance won praise from every critic in town.",
+    "example_cn": "她出色的表演赢得了城里每位评论家的赞扬。",
+    "collins": null,
+    "frq": 2280,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0171",
+    "word": "anxious",
+    "phonetic": "ˈæŋkʃəs",
+    "pos": "adj.",
+    "meaning_cn": "焦虑的；渴望的",
+    "meaning_en": "feeling worried and nervous, or very eager for something",
+    "example": "She felt anxious about the exam results and could not sleep that night.",
+    "example_cn": "她为考试成绩感到焦虑，那晚无法入睡。",
+    "collins": null,
+    "frq": 2480,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0172",
+    "word": "awkward",
+    "phonetic": "ˈɔːkwəd",
+    "pos": "adj.",
+    "meaning_cn": "尴尬的；笨拙的",
+    "meaning_en": "causing embarrassment, or moving in a clumsy and ungraceful way",
+    "example": "There was an awkward silence after he mentioned her previous job.",
+    "example_cn": "他提到她以前的工作后，出现了尴尬的沉默。",
+    "collins": null,
+    "frq": 2500,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0173",
+    "word": "abstract",
+    "phonetic": "ˈæbstrækt",
+    "pos": "adj.",
+    "meaning_cn": "抽象的；理论上的；深奥的",
+    "meaning_en": "existing as an idea rather than as a physical object",
+    "example": "Young children find abstract ideas like justice quite hard to grasp.",
+    "example_cn": "幼儿觉得正义这类抽象概念相当难以理解。",
+    "collins": null,
+    "frq": 2680,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0174",
+    "word": "blank",
+    "phonetic": "blæŋk",
+    "pos": "adj.",
+    "meaning_cn": "空白的；茫然的",
+    "meaning_en": "having no writing, marks, or expression",
+    "example": "She stared at the blank page, unsure how to begin her essay.",
+    "example_cn": "她盯着空白的纸页，不知如何下笔写这篇文章。",
+    "collins": null,
+    "frq": 3020,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0175",
+    "word": "artificial",
+    "phonetic": "ˌɑːtɪˈfɪʃl",
+    "pos": "adj.",
+    "meaning_cn": "人造的；人工的；虚假的",
+    "meaning_en": "made by people rather than occurring naturally in the world",
+    "example": "The lake looks natural, but it is actually a large artificial pool.",
+    "example_cn": "这个湖看上去很自然，但实际上是一个大型人工水池。",
+    "collins": null,
+    "frq": 3100,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0176",
+    "word": "bitter",
+    "phonetic": "ˈbɪtə(r)",
+    "pos": "adj.",
+    "meaning_cn": "苦的；痛苦的；怨恨的",
+    "meaning_en": "having a sharp unpleasant taste or feeling resentful and hurt",
+    "example": "The medicine left a bitter taste that lingered all afternoon.",
+    "example_cn": "这药留下了一股整个下午都挥之不去的苦味。",
+    "collins": null,
+    "frq": 3120,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0177",
+    "word": "arbitrary",
+    "phonetic": "ˈɑːbɪtrəri",
+    "pos": "adj.",
+    "meaning_cn": "任意的；专断的；武断的",
+    "meaning_en": "based on personal choice or chance rather than reason",
+    "example": "The decision seemed completely arbitrary and no one could explain it.",
+    "example_cn": "这个决定似乎完全是随意的，没人能解释清楚。",
+    "collins": null,
+    "frq": 3800,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0178",
+    "word": "adequate",
+    "phonetic": "ˈædɪkwət",
+    "pos": "adj.",
+    "meaning_cn": "足够的；适当的；能胜任的",
+    "meaning_en": "enough in quantity or good enough in quality for a purpose",
+    "example": "The room was small but adequate for a single traveler.",
+    "example_cn": "这个房间不大，但供一位独自旅行的人住已经足够了。",
+    "collins": null,
+    "frq": 4200,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0179",
+    "word": "approximate",
+    "phonetic": "əˈprɒksɪmət",
+    "pos": "adj.",
+    "meaning_cn": "大约的；近似的；不精确的",
+    "meaning_en": "close to a particular number or amount but not exact",
+    "example": "The approximate cost of the repairs is around three hundred pounds.",
+    "example_cn": "这些维修的大致费用在三百英镑左右。",
+    "collins": null,
+    "frq": 4200,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0180",
+    "word": "cautious",
+    "phonetic": "ˈkɔːʃəs",
+    "pos": "adj.",
+    "meaning_cn": "谨慎的；小心的",
+    "meaning_en": "careful to avoid possible danger, mistakes or risks",
+    "example": "Investors remained cautious about putting more money into the rapidly changing market.",
+    "example_cn": "投资者对向这个快速变化的市场投入更多资金仍持谨慎态度。",
+    "collins": null,
+    "frq": 4200,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0181",
+    "word": "actually",
+    "phonetic": "ˈæktʃuəli",
+    "pos": "adv.",
+    "meaning_cn": "实际上；事实上",
+    "meaning_en": "used to say what is true in fact",
+    "example": "The movie was actually much better than I expected it to be.",
+    "example_cn": "这部电影实际上比我预想的要好得多。",
+    "collins": null,
+    "frq": 700,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0182",
+    "word": "clearly",
+    "phonetic": "ˈklɪəli",
+    "pos": "adv.",
+    "meaning_cn": "清楚地；明显地",
+    "meaning_en": "in a way that is easy to understand",
+    "example": "He clearly explained all the rules before the game started yesterday.",
+    "example_cn": "昨天比赛开始前，他清楚地讲解了所有规则。",
+    "collins": null,
+    "frq": 800,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0183",
+    "word": "certainly",
+    "phonetic": "ˈsɜːtənli",
+    "pos": "adv.",
+    "meaning_cn": "当然；无疑地",
+    "meaning_en": "used to agree strongly or say something is true",
+    "example": "This is certainly the best meal I have eaten all year.",
+    "example_cn": "这无疑是我一整年吃过的最好的一顿饭。",
+    "collins": null,
+    "frq": 900,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0184",
+    "word": "especially",
+    "phonetic": "ɪˈspeʃəli",
+    "pos": "adv.",
+    "meaning_cn": "尤其是；特别地",
+    "meaning_en": "more than usual, or above all others",
+    "example": "I love fruit, especially apples and oranges in the summer.",
+    "example_cn": "我喜欢水果，尤其是夏天的苹果和橙子。",
+    "collins": null,
+    "frq": 900,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0185",
+    "word": "completely",
+    "phonetic": "kəmˈpliːtli",
+    "pos": "adv.",
+    "meaning_cn": "完全地；彻底地",
+    "meaning_en": "in every way; totally and fully",
+    "example": "The old building was completely destroyed by the fire last night.",
+    "example_cn": "那座老建筑昨晚被大火彻底烧毁了。",
+    "collins": null,
+    "frq": 1100,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0186",
+    "word": "directly",
+    "phonetic": "dɪˈrektli",
+    "pos": "adv.",
+    "meaning_cn": "直接地；径直地",
+    "meaning_en": "in a straight line or without anything between",
+    "example": "The train goes directly from the airport to the city centre.",
+    "example_cn": "这趟列车从机场直达市中心。",
+    "collins": null,
+    "frq": 1100,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0187",
+    "word": "absolutely",
+    "phonetic": "ˈæbsəluːtli",
+    "pos": "adv.",
+    "meaning_cn": "绝对地；完全地",
+    "meaning_en": "in a complete way, without any doubt",
+    "example": "I absolutely agree with every single point that you just made.",
+    "example_cn": "我完全同意你刚才提出的每一点。",
+    "collins": null,
+    "frq": 1200,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0188",
+    "word": "currently",
+    "phonetic": "ˈkʌrəntli",
+    "pos": "adv.",
+    "meaning_cn": "目前；现在；当前",
+    "meaning_en": "at the present time or moment",
+    "example": "The project is currently under review by the planning committee.",
+    "example_cn": "该项目目前正在接受规划委员会的审查。",
+    "collins": null,
+    "frq": 1200,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0189",
+    "word": "definitely",
+    "phonetic": "ˈdefɪnətli",
+    "pos": "adv.",
+    "meaning_cn": "肯定地；明确地",
+    "meaning_en": "without doubt, in a clear and certain way",
+    "example": "She definitely plans to attend the important meeting tomorrow morning.",
+    "example_cn": "她肯定打算参加明天上午的重要会议。",
+    "collins": null,
+    "frq": 1300,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0190",
+    "word": "carefully",
+    "phonetic": "ˈkeəfəli",
+    "pos": "adv.",
+    "meaning_cn": "仔细地；小心地",
+    "meaning_en": "in a way that shows attention and thought",
+    "example": "She carefully checked every number in the report before sending it.",
+    "example_cn": "报告寄出前，她仔细核对了报告中的每一个数字。",
+    "collins": null,
+    "frq": 1400,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0191",
+    "word": "eventually",
+    "phonetic": "ɪˈventʃuəli",
+    "pos": "adv.",
+    "meaning_cn": "最终；终于；后来",
+    "meaning_en": "at the end of a long period of time",
+    "example": "After many delays, the flight eventually left the airport at midnight.",
+    "example_cn": "经过多次延误，航班最终在午夜离开了机场。",
+    "collins": null,
+    "frq": 1400,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0192",
+    "word": "apparently",
+    "phonetic": "əˈpærəntli",
+    "pos": "adv.",
+    "meaning_cn": "看来；似乎；据说",
+    "meaning_en": "as it seems from what you have heard",
+    "example": "Apparently, the meeting has been moved to next Friday morning.",
+    "example_cn": "据说会议已改到下周五上午。",
+    "collins": null,
+    "frq": 1600,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0193",
+    "word": "entirely",
+    "phonetic": "ɪnˈtaɪəli",
+    "pos": "adv.",
+    "meaning_cn": "完全地；全部地",
+    "meaning_en": "completely and in every possible way",
+    "example": "I entirely agree with your opinion about the new plan.",
+    "example_cn": "我完全同意你对新计划的看法。",
+    "collins": null,
+    "frq": 1700,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0194",
+    "word": "effectively",
+    "phonetic": "ɪˈfektɪvli",
+    "pos": "adv.",
+    "meaning_cn": "有效地；实际上",
+    "meaning_en": "in a way that produces the intended result",
+    "example": "The new manager effectively solved the problem within two weeks.",
+    "example_cn": "新经理在两周内有效地解决了这个问题。",
+    "collins": null,
+    "frq": 1800,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0195",
+    "word": "constantly",
+    "phonetic": "ˈkɒnstəntli",
+    "pos": "adv.",
+    "meaning_cn": "不断地；经常地",
+    "meaning_en": "all the time; again and again",
+    "example": "He constantly checks his phone during every meeting at work.",
+    "example_cn": "他每次开会时都不停地看手机。",
+    "collins": null,
+    "frq": 1900,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0196",
+    "word": "basically",
+    "phonetic": "ˈbeɪsɪkli",
+    "pos": "adv.",
+    "meaning_cn": "基本上；大致说来",
+    "meaning_en": "in the main or most important ways",
+    "example": "The plan is basically the same as the one we discussed.",
+    "example_cn": "这个计划基本上和我们讨论过的那个一样。",
+    "collins": null,
+    "frq": 2100,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0197",
+    "word": "equally",
+    "phonetic": "ˈiːkwəli",
+    "pos": "adv.",
+    "meaning_cn": "同样地；平等地",
+    "meaning_en": "in the same amount, degree, or manner",
+    "example": "The two teams played equally well during the whole match.",
+    "example_cn": "整场比赛中，两支球队表现得同样出色。",
+    "collins": null,
+    "frq": 2100,
+    "tags": [
+      "cet4"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0198",
+    "word": "essentially",
+    "phonetic": "ɪˈsenʃəli",
+    "pos": "adv.",
+    "meaning_cn": "本质上；基本上",
+    "meaning_en": "in the most important or basic way",
+    "example": "The two designs are essentially the same in every detail.",
+    "example_cn": "这两个设计在每一个细节上基本上是相同的。",
+    "collins": null,
+    "frq": 2600,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0199",
+    "word": "briefly",
+    "phonetic": "ˈbriːfli",
+    "pos": "adv.",
+    "meaning_cn": "短暂地；简要地",
+    "meaning_en": "for a short time or in few words",
+    "example": "She spoke briefly about her plans for the coming year.",
+    "example_cn": "她简短地谈了自己来年的计划。",
+    "collins": null,
+    "frq": 3200,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  },
+  {
+    "id": "w0200",
+    "word": "deliberately",
+    "phonetic": "dɪˈlɪbərətli",
+    "pos": "adv.",
+    "meaning_cn": "故意地；蓄意地",
+    "meaning_en": "in a way that is intentional and planned",
+    "example": "He deliberately ignored my question and walked out of the room.",
+    "example_cn": "他故意无视我的问题，然后走出了房间。",
+    "collins": null,
+    "frq": 3200,
+    "tags": [
+      "cet4",
+      "cet6"
+    ],
+    "audio_url": null
+  }
+]

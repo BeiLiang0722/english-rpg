@@ -1,0 +1,152 @@
+/* tokens.css · 设计 token（唯一数值出口）
+ * 来源：docs/02-页面结构与设计.md §5.1 / §5.2 / §5.3
+ * 本文件只允许出现 :root 选择器，不写任何具体组件的样式。
+ */
+
+:root {
+  color-scheme: dark;
+
+  /* ===== 背景层级：越靠上层越亮 ===== */
+  --bg-base:        #0F1424;
+  --bg-surface:     #1A2138;
+  --bg-surface-2:   #232C48;
+  --bg-elevated:    #2B3557;
+
+  /* ===== 文字 ===== */
+  --text-primary:   #F5F7FF;
+  --text-secondary: #A9B4CC;
+  --text-muted:     #7C89A6;
+  --text-disabled:  #5A6684;
+
+  /* ===== 主色 ===== */
+  --accent:         #6C5CE7;
+  --accent-hover:   #7D6EF0;
+  --accent-text:    #8B7CFF;
+  --accent-subtle:  rgba(108, 92, 231, 0.16);
+  --accent-on:      #FFFFFF;
+
+  /* ===== 语义色 ===== */
+  --success:        #34D399;
+  --success-bg:     rgba(52, 211, 153, 0.14);
+  --danger:         #FF6B6B;
+  --danger-bg:      rgba(255, 107, 107, 0.14);
+  --warning:        #FFB347;
+  --gold:           #FFC94A;
+  --gold-bg:        rgba(255, 201, 74, 0.14);
+
+  /* ===== 描边与分割 ===== */
+  --border:         #2E3752;
+  --border-strong:  #3A4565;
+
+  /* ===== 渐变 ===== */
+  --grad-cta:       linear-gradient(135deg, #6C5CE7 0%, #8B5CF6 100%);
+  --grad-levelup:   linear-gradient(135deg, #FFC94A 0%, #FF8A3D 100%);
+  --grad-xp:        linear-gradient(90deg, #6C5CE7 0%, #38BDF8 100%);
+
+  /* ===== 生命 ===== */
+  --hp-full:        #FF5C7A;
+  --hp-empty:       #3A4565;
+
+  /* ===== 字体 ===== */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+               "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC",
+               "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+               "Liberation Mono", monospace;
+
+  --fw-regular: 400;
+  --fw-medium:  500;
+  --fw-bold:    700;
+  --fw-black:   800;
+
+  /* ===== 字号阶梯（1.25 倍音阶） ===== */
+  --fs-display:   2.5rem;    /* 40px */
+  --fs-h1:        1.875rem;  /* 30px */
+  --fs-h2:        1.625rem;  /* 26px */
+  --fs-h3:        1.25rem;   /* 20px */
+  --fs-body-lg:   1.125rem;  /* 18px */
+  --fs-body:      1rem;      /* 16px */
+  --fs-small:     0.875rem;  /* 14px */
+  --fs-caption:   0.75rem;   /* 12px */
+
+  --lh-display:   1.1;
+  --lh-h1:        1.27;
+  --lh-h2:        1.31;
+  --lh-h3:        1.4;
+  --lh-body-lg:   1.55;
+  --lh-body:      1.6;
+  --lh-small:     1.57;
+  --lh-caption:   1.5;
+
+  /* ===== 圆角 ===== */
+  --r-xs:   6px;
+  --r-sm:  10px;
+  --r-md:  14px;
+  --r-lg:  20px;
+  --r-xl:  28px;
+  --r-full: 999px;
+
+  /* ===== 间距（4px 网格） ===== */
+  --sp-1:  4px;   --sp-2:  8px;   --sp-3: 12px;  --sp-4: 16px;
+  --sp-5: 20px;   --sp-6: 24px;   --sp-7: 32px;  --sp-8: 40px;
+  --sp-9: 48px;   --sp-10: 64px;
+
+  /* ===== 阴影 ===== */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.32);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.36);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.44);
+  --shadow-xl: 0 24px 64px rgba(0, 0, 0, 0.52);
+  --glow-accent: 0 0 0 1px rgba(139, 124, 255, 0.45), 0 8px 28px rgba(108, 92, 231, 0.42);
+  --glow-gold:   0 0 0 1px rgba(255, 201, 74, 0.50), 0 8px 32px rgba(255, 201, 74, 0.38);
+
+  /* 描边内亮线（深色卡片的关键细节） */
+  --ring-card: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+
+  /* ===== 动效 ===== */
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 300ms;
+  --dur-slower: 420ms;
+  --dur-xp: 700ms;
+  --dur-overlay: 2200ms;
+
+  --ease-out:    cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* 组件尺寸 */
+  --h-cta: 56px;
+  --h-option: 56px;
+  --w-page: 560px;
+}
+
+/* 字号档位（设置页切换）：全站 rem 整体缩放 */
+:root[data-fontsize="lg"] { font-size: 112.5%; }
+:root[data-fontsize="xl"] { font-size: 125%; }
+
+/* 浅色主题：v0.1 不启用，仅保留结构 */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg-base:        #F7F9FD;
+  --bg-surface:     #FFFFFF;
+  --bg-surface-2:   #F1F4FA;
+  --bg-elevated:    #FFFFFF;
+  --text-primary:   #1B2233;
+  --text-secondary: #4A5570;
+  --text-muted:     #5F6B85;
+  --text-disabled:  #98A2B8;
+  --accent:         #5B4BD6;
+  --accent-hover:   #4C3EC4;
+  --accent-text:    #4C3EC4;
+  --accent-subtle:  rgba(91, 75, 214, 0.10);
+  --success:        #10855A;
+  --success-bg:     rgba(16, 133, 90, 0.10);
+  --danger:         #D0342C;
+  --danger-bg:      rgba(208, 52, 44, 0.10);
+  --warning:        #B26A00;
+  --gold:           #946200;
+  --gold-bg:        rgba(255, 201, 74, 0.20);
+  --border:         #E2E8F4;
+  --border-strong:  #C9D3E6;
+  --hp-full:        #E23E57;
+  --hp-empty:       #D8DEEA;
+}

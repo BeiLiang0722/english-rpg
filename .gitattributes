@@ -1,0 +1,5 @@
+# english-rpg · 行尾与文本处理约定
+#
+# 统一为 LF：源码是纯前端（HTML/CSS/JS），浏览器与 Node 都支持 LF；
+# 固定后不会再出现 Windows 上「LF will be replaced by CRLF」的噪声 diff。
+* text=auto eol=lf

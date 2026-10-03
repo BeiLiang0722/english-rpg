@@ -1,0 +1,149 @@
+/* pages.css · 页面专属布局 + 响应式覆盖
+ * 来源：docs/02 §6 断点表；docs/04 T1.5
+ * 责任边界：不引入新 token（必须回 tokens.css）。
+ */
+
+/* 全局壳 */
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-main { flex: 1; }
+
+/* 断点：md 640px 起内容居中，宽度上限 560px */
+@media (min-width: 640px) {
+  .page { padding: var(--sp-5); }
+  .hud { padding: var(--sp-4); }
+  .question-card { padding: var(--sp-6); }
+}
+
+/* 断点：lg 1024px 起桌面居中卡片（本版不做左导航，保持居中单列） */
+@media (min-width: 1024px) {
+  :root { --w-page: 720px; }
+  .page { padding: var(--sp-6) var(--sp-5) var(--sp-8); }
+  .grid-4 { gap: var(--sp-4); }
+  .tile { min-height: 104px; }
+}
+
+/* 断点：xl 1440px */
+@media (min-width: 1440px) {
+  :root { --w-page: 880px; }
+}
+
+/* ============ 首页（营地） ============ */
+.home-daily {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.home-cta-card {
+  padding: var(--sp-5) var(--sp-4);
+  border-radius: var(--r-lg);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--ring-card);
+  text-align: center;
+}
+
+.home-cta-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-4);
+}
+
+.home-cta-title { font-size: var(--fs-h3); }
+
+.home-cta-note {
+  margin-top: var(--sp-3);
+  font-size: var(--fs-small);
+  color: var(--accent-text);
+}
+
+.home-today-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+}
+
+/* ============ 对局页 ============ */
+.battle-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.battle-body {
+  flex: 1;
+  max-width: var(--w-page);
+  width: 100%;
+  margin-inline: auto;
+  padding: 0 var(--sp-4) var(--sp-4);
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  margin-top: var(--sp-4);
+}
+
+/* 320–389px：小屏收边距，题干字号 −2px */
+@media (max-width: 389px) {
+  .page { padding: var(--sp-3); }
+  .battle-body { padding: 0 var(--sp-3) var(--sp-3); }
+  .question-word { font-size: calc(var(--fs-h1) - 2px); }
+  .question-word.is-cn { font-size: calc(var(--fs-h2) - 2px); }
+  .options { gap: var(--sp-2); }
+}
+
+/* ============ 结算页 ============ */
+.result-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  margin-top: var(--sp-4);
+}
+
+@media (min-width: 1024px) {
+  .result-actions { flex-direction: row; }
+  .result-actions .btn { flex: 1; }
+  .home-today-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* ============ 启动过场 ============ */
+.boot-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-4);
+  padding: var(--sp-6);
+  text-align: center;
+}
+
+.boot-brand {
+  font-size: var(--fs-h2);
+  font-weight: var(--fw-black);
+  letter-spacing: 0.06em;
+  background: var(--grad-cta);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.boot-version { font-size: var(--fs-caption); color: var(--text-muted); }
+.boot-bar { width: min(240px, 70vw); }
+
+/* ============ 设置页 ============ */
+.settings-danger {
+  border-color: var(--danger);
+}
+
+.settings-danger .card-title { color: var(--danger); }

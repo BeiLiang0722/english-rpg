@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-fontsize="md" data-motion="full">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0F1424">
+  <meta name="description" content="单词猎手 · 游戏化背单词（离线可用，双击本文件即可运行）">
+  <title>单词猎手 v0.1</title>
+
+  <!-- 样式：token → 基础 → 组件 → 页面（顺序即层叠优先级） -->
+  <link rel="stylesheet" href="styles/tokens.css">
+  <link rel="stylesheet" href="styles/base.css">
+  <link rel="stylesheet" href="styles/components.css">
+  <link rel="stylesheet" href="styles/pages.css">
+</head>
+<body>
+  <!-- 键盘用户按一次 Tab 即可跳到主内容 -->
+  <a class="skip-link" href="#main">跳到主内容</a>
+
+  <div class="app-shell">
+    <!-- 整页渲染的挂载点（每页返回 HTML 字符串后一次性写入） -->
+    <div class="app-main" id="app" role="application" aria-label="单词猎手"></div>
+  </div>
+
+  <!-- 轻提示容器 -->
+  <div id="toast-root" aria-live="polite" aria-atomic="false"></div>
+  <!-- 覆盖层容器（升级 / 徽章 / 确认弹窗） -->
+  <div id="overlay-root"></div>
+  <!-- 屏幕阅读器播报区 -->
+  <p id="live-region" aria-live="polite" class="visually-hidden"></p>
+
+  <noscript>
+    <p class="noscript-note">单词猎手需要开启 JavaScript 才能运行。请在浏览器设置中允许本页运行脚本后刷新。</p>
+  </noscript>
+
+  <!--
+    脚本加载顺序 = 依赖顺序（每个文件一个 IIFE，挂到 window.WQ，不用 ES Module，
+    因为 file:// 协议下 type="module" 会被 CORS 拦住，双击即用是一票否决需求）。
+  -->
+
+  <!-- 1. 常量与数据（无依赖） -->
+  <script src="src/config/balance.js"></script>
+  <script src="src/config/questions.js"></script>
+  <script src="src/config/achievements.js"></script>
+  <!-- 词库：运行时用 JS 形态（file:// 下 fetch 读不了 data/words.json，
+       该 JSON 是同一份数据的可校验副本，人工核对与 dev/check-words.mjs 用） -->
+  <script src="src/data/words.js"></script>
+
+  <!-- 2. 核心工具 -->
+  <script src="src/core/util.js"></script>
+  <script src="src/core/bus.js"></script>
+  <script src="src/store/log.js"></script>
+  <script src="src/core/audio.js"></script>
+  <script src="src/core/router.js"></script>
+
+  <!-- 3. 状态与持久化 -->
+  <script src="src/store/save.js"></script>
+  <script src="src/store/persist.js"></script>
+  <script src="src/store/state.js"></script>
+
+  <!-- 4. 纯逻辑 -->
+  <script src="src/game/level.js"></script>
+  <script src="src/game/srs.js"></script>
+  <script src="src/game/streak.js"></script>
+  <script src="src/game/questionEngine.js"></script>
+  <script src="src/game/questionPool.js"></script>
+  <script src="src/game/achievements.js"></script>
+  <script src="src/game/shop.js"></script>
+  <script src="src/game/balance.js"></script>
+  <script src="src/game/flow.js"></script>
+
+  <!-- 5. UI 基础件 -->
+  <script src="src/ui/toast.js"></script>
+  <script src="src/ui/overlay.js"></script>
+  <script src="src/ui/anim.js"></script>
+  <script src="src/ui/shell.js"></script>
+  <script src="src/ui/selfcheck.js"></script>
+
+  <!-- 6. 页面 -->
+  <script src="src/ui/pages/boot.js"></script>
+  <script src="src/ui/pages/home.js"></script>
+  <script src="src/ui/pages/battle.js"></script>
+  <script src="src/ui/pages/result.js"></script>
+  <script src="src/ui/pages/growth.js"></script>
+  <script src="src/ui/pages/shop.js"></script>
+  <script src="src/ui/pages/settings.js"></script>
+  <script src="src/ui/pages/selfcheck.js"></script>
+
+  <!-- 7. 启动 -->
+  <script src="src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+# english-rpg · 顶层仓库的 .gitignore
+#
+# 本仓库包含三部分：
+#   app/   交付物（零依赖、零构建，源码即产物，双击 app/index.html 即可运行）
+#   docs/  文档（需求 / 设计 / PRD / 开发计划 / 验收记录 / 验收报告）
+#   dev/   开发期工具（词库校验、自检、DOM 端到端；删掉不影响页面运行）
+#
+# 交付物、文档与工具源码全部入库；只挡「生成物 / 临时 / 系统 / 编辑器」四类。
+# 注意：app/data/words.json（200 词校验副本）是交付物的一部分，绝对不能忽略。
+
+# ---- 测试与校验脚本的产物（每次运行都会重写）----
+dev/out/
+
+# ---- 验收 / 排查期的临时文件 ----
+_tmp*
+_tmp*/
+
+# ---- 操作系统 ----
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+$RECYCLE.BIN/
+
+# ---- 编辑器 / IDE ----
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-workspace
+
+# ---- 通用临时文件与日志 ----
+*.log
+*.tmp
+*.temp
+*.pid
+*.seed
+
+# ---- 将来若引入工具链（当前是零依赖零构建，本不该出现）----
+node_modules/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# ---- 敏感信息兜底（本项目不需要任何密钥，出现即视为误提交）----
+.env
+.env.*
+!*.env.example
+*.pem
+*.key
+credentials.json
