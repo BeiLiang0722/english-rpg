@@ -75,8 +75,14 @@
       const fn = actionTable[action];
       if (typeof fn === 'function') {
         evt.preventDefault();
+        /* v0.2：必须阻止冒泡。否则「点击开箱 → 渲染 → 打开覆盖层」这条链上，
+           原始 click 会继续冒泡到 document，被刚挂上的 overlay 遮罩点击监听当作"点遮罩"
+           而立刻关掉覆盖层（真实浏览器里同样会发生）。 */
+        if (typeof evt.stopPropagation === 'function') evt.stopPropagation();
         fn(el, id, evt);
       } else if (action === 'home') {
+        if (typeof evt.preventDefault === 'function') evt.preventDefault();
+        if (typeof evt.stopPropagation === 'function') evt.stopPropagation();
         WQ.router.go('#/home');
       }
     });

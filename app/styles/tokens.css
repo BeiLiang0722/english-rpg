@@ -11,6 +11,8 @@
   --bg-surface:     #1A2138;
   --bg-surface-2:   #232C48;
   --bg-elevated:    #2B3557;
+  /* --bg-base 的全透明版本：给「渐隐到页面底」的渐变收尾用，避免再写死 rgba() */
+  --bg-base-0:      rgba(15, 20, 36, 0);
 
   /* ===== 文字 ===== */
   --text-primary:   #F5F7FF;
@@ -33,9 +35,16 @@
   --warning:        #FFB347;
   --gold:           #FFC94A;
   --gold-bg:        rgba(255, 201, 74, 0.14);
+  /* 语义色「作为小号文字」时的安全变体：深色主题与原色相同（零视觉变化），
+     浅色主题压深，保证压在同色 -bg tint 上仍 ≥4.5:1（见 :root[data-theme="light"]）。 */
+  --gold-text:      #FFC94A;   /* 对 gold-bg(0.14)@surface-2 = 6.51:1 */
+  --success-text:   #34D399;   /* 对 success-bg(0.14)@surface-2 = 5.44:1 */
 
   /* ===== 描边与分割 ===== */
   --border:         #2E3752;
+  /* docs/02 §7.2：--border-strong 对 --bg-base 仅 1.94:1，属「仅装饰性分割线」。
+     它不承担可交互边界职责（需要 ≥3:1 的边界用内亮线 / 语义色描边）。
+     本轮未改动它的数值，D21 通过给 --hp-empty 单独取值修复。 */
   --border-strong:  #3A4565;
 
   /* ===== 渐变 ===== */
@@ -43,9 +52,20 @@
   --grad-levelup:   linear-gradient(135deg, #FFC94A 0%, #FF8A3D 100%);
   --grad-xp:        linear-gradient(90deg, #6C5CE7 0%, #38BDF8 100%);
 
-  /* ===== 生命 ===== */
+  /* ===== 连击档位（docs/02 §5.4 A09：蓝 → 紫 → 金） =====
+     前景色 / 底色成对出现；每档前景对其自身底色（半透明 tint 叠加在任一背景层上）
+     最差情况仍 ≥4.0:1（多数 ≥5:1），满足文字与图形双重标准。 */
+  --combo-1-fg: #38BDF8;  --combo-1-bg: rgba(56, 189, 248, 0.18);
+  --combo-2-fg: #B4A5FF;  --combo-2-bg: rgba(139, 124, 255, 0.16);
+  --combo-3-fg: #FFC94A;  --combo-3-bg: rgba(255, 201, 74, 0.18);
+
+  /* ===== 生命 =====
+     docs/02 §7.2：--hp-full 对 --bg-surface 5.36:1。
+     D21 修复：--hp-empty 是「有意义图形」（空心心形），需满足 WCAG 1.4.11 ≥3:1。
+     取值 #6A79A2：对 --bg-surface 3.69:1 / --bg-base 4.25:1（对 --bg-surface-2 3.19:1），
+     同时明显弱于实心心形（5.36:1），保留「满 / 空」的强弱差。 */
   --hp-full:        #FF5C7A;
-  --hp-empty:       #3A4565;
+  --hp-empty:       #6A79A2;
 
   /* ===== 字体 ===== */
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
@@ -102,6 +122,9 @@
   /* 描边内亮线（深色卡片的关键细节） */
   --ring-card: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 
+  /* 覆盖层蒙层（两个主题共用同一个深色 scrim） */
+  --scrim: rgba(6, 9, 20, 0.8);
+
   /* ===== 动效 ===== */
   --dur-fast: 120ms;
   --dur-base: 200ms;
@@ -109,6 +132,8 @@
   --dur-slower: 420ms;
   --dur-xp: 700ms;
   --dur-overlay: 2200ms;
+  /* 一次性庆祝动效（连击爆发 / 宝箱 / 解锁扫光 / 升级闪光）：docs/02 §5.4 规定上限 600ms */
+  --dur-flash: 560ms;
 
   --ease-out:    cubic-bezier(0.22, 1, 0.36, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -130,6 +155,7 @@
   --bg-surface:     #FFFFFF;
   --bg-surface-2:   #F1F4FA;
   --bg-elevated:    #FFFFFF;
+  --bg-base-0:      rgba(247, 249, 253, 0);
   --text-primary:   #1B2233;
   --text-secondary: #4A5570;
   --text-muted:     #5F6B85;
@@ -145,8 +171,18 @@
   --warning:        #B26A00;
   --gold:           #946200;
   --gold-bg:        rgba(255, 201, 74, 0.20);
+  /* 浅色主题下 --gold #946200 压在 gold-bg(0.20) 上只有 4.42:1、--success #10855A 压在
+     success-bg(0.10) 上只有 3.73:1；这两个变体专供「同色 tint 上的小字」，补齐 4.5:1。 */
+  --gold-text:      #7A4F00;   /* 金 tint 上 6.01:1，白底 7.13:1 */
+  --success-text:   #0A6B47;   /* 绿 tint 上 4.98:1，白底 6.55:1 */
   --border:         #E2E8F4;
   --border-strong:  #C9D3E6;
+  /* 浅色主题连击档位：把「蓝 → 紫 → 金」压深到能在浅底上读（最差 4.5:1） */
+  --combo-1-fg: #0369A1;  --combo-1-bg: rgba(3, 105, 161, 0.12);
+  --combo-2-fg: #4C3EC4;  --combo-2-bg: rgba(91, 75, 214, 0.10);
+  --combo-3-fg: #7A4F00;  --combo-3-bg: rgba(148, 98, 0, 0.14);
+  /* D21 浅色主题对称修复：#808CA0 对 #FFFFFF 3.40:1 / #F7F9FD 3.23:1 / #F1F4FA 3.09:1，
+     弱于浅色主题实心心形 #E23E57（对 #F7F9FD 3.94:1）。 */
   --hp-full:        #E23E57;
-  --hp-empty:       #D8DEEA;
+  --hp-empty:       #808CA0;
 }

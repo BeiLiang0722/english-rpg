@@ -1,5 +1,5 @@
 /* base.css · 重置、排版、焦点、动效降级、工具类
- * 来源：docs/02 §5.2 / §7.3 / §7.5；docs/04 T1.3
+ * 来源：docs/02 §5.2 字体 / §6.1 断点策略 / §7.3 字号与可读性 / §7.5 其他；docs/04 T1.3
  * 责任边界：只写全局规则，不写页面级布局。
  */
 
@@ -7,6 +7,7 @@
 *::before,
 *::after { box-sizing: border-box; }
 
+/* docs/02 §6「不做字号缩放惊喜」：锁定文本自动调整，全站缩放只走 :root font-size */
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
@@ -24,6 +25,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  /* docs/02 §6：长英文单词 / 音标不得撑破 360px 视口 */
   overflow-wrap: break-word;
   padding-bottom: env(safe-area-inset-bottom);
   padding-left: env(safe-area-inset-left);
@@ -52,7 +54,12 @@ button {
   padding: 0;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  /* 移动端：去掉 300ms 双击缩放等待，点击即响应（docs/02 §7.5） */
+  touch-action: manipulation;
 }
+
+/* 交互元素统一不吃 iOS 双击缩放；label / summary 等可点文本同理 */
+summary, label, [role="switch"], [role="radio"], [role="button"] { touch-action: manipulation; }
 
 a { color: var(--accent-text); text-decoration: none; }
 a:hover { text-decoration: underline; }
@@ -62,7 +69,10 @@ img, svg { display: block; max-width: 100%; }
 /* 数字与音标用等宽字体对齐 */
 .mono { font-family: var(--font-mono); }
 
-/* 焦点可见（键盘用户唯一可见的焦点提示） */
+/* 焦点可见（键盘用户唯一可见的焦点提示，docs/02 §7.1）
+ * 禁止只写 outline:none —— 全站唯一的焦点样式就是这里。
+ * 实心主色控件（主按钮 / 选中的 seg / 打开的开关）在 components.css 里把这一圈
+ * 改成「内缩 2px 的白环」，保证白环压在 --accent 上仍 ≥4.86:1（深色）/ ≥6.14:1（浅色）。 */
 :focus-visible {
   outline: 2px solid var(--accent-text);
   outline-offset: 2px;
@@ -99,12 +109,15 @@ img, svg { display: block; max-width: 100%; }
   border: 0;
 }
 
-/* 动效降级：系统级 + 设置页手动开关走同一条路径（02 §5.4 A20） */
+/* 动效降级：系统级 + 设置页手动开关走同一条路径（02 §5.4 A20）
+ * 两条都必须覆盖「新增的一切动效」：本文件用 * 选择器保证全覆盖；
+ * animation-delay 一并清零，否则带 stagger 的入场会被延迟卡在不可见状态。 */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 1ms !important;
+    animation-delay: 0s !important;
     animation-iteration-count: 1 !important;
     transition-duration: 1ms !important;
     scroll-behavior: auto !important;
@@ -115,6 +128,7 @@ img, svg { display: block; max-width: 100%; }
 :root[data-motion="reduced"] *::before,
 :root[data-motion="reduced"] *::after {
   animation-duration: 1ms !important;
+  animation-delay: 0s !important;
   animation-iteration-count: 1 !important;
   transition-duration: 1ms !important;
 }

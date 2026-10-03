@@ -1,16 +1,20 @@
 /* pages.css · 页面专属布局 + 响应式覆盖
- * 来源：docs/02 §6 断点表；docs/04 T1.5
- * 责任边界：不引入新 token（必须回 tokens.css）。
+ * 来源：docs/02 §6.1 断点表 / §6.2 各页桌面呈现 / §6.3 桌面增强 / §7.5 触控目标；docs/04 T1.5
+ * 责任边界：不引入新 token（必须回 tokens.css）；卡片表面统一由 components.css 的卡片组给出，
+ *           本文件只写页面布局与断点覆盖。
+ * 本轮补充：P7 数据统计页全部块（图表 / 正确率覆盖层 / 图例 / 词库进度 / 小指标）
+ *           与 xs(≤389px) 下的「零横向溢出」加固。
  */
 
-/* 全局壳 */
+/* ============ 全局壳 ============ */
 .app-shell {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
 }
 
-.app-main { flex: 1; }
+.app-main { flex: 1; min-width: 0; }
 
 /* 断点：md 640px 起内容居中，宽度上限 560px */
 @media (min-width: 640px) {
@@ -39,12 +43,9 @@
   gap: var(--sp-3);
 }
 
+/* .home-cta-card 的卡片表面（底/描边/圆角/内亮线）由 components.css 的卡片组统一给出 */
 .home-cta-card {
   padding: var(--sp-5) var(--sp-4);
-  border-radius: var(--r-lg);
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  box-shadow: var(--ring-card);
   text-align: center;
 }
 
@@ -76,6 +77,7 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .battle-body {
@@ -84,6 +86,7 @@
   width: 100%;
   margin-inline: auto;
   padding: 0 var(--sp-4) var(--sp-4);
+  min-width: 0;
 }
 
 .options {
@@ -91,15 +94,6 @@
   flex-direction: column;
   gap: var(--sp-3);
   margin-top: var(--sp-4);
-}
-
-/* 320–389px：小屏收边距，题干字号 −2px */
-@media (max-width: 389px) {
-  .page { padding: var(--sp-3); }
-  .battle-body { padding: 0 var(--sp-3) var(--sp-3); }
-  .question-word { font-size: calc(var(--fs-h1) - 2px); }
-  .question-word.is-cn { font-size: calc(var(--fs-h2) - 2px); }
-  .options { gap: var(--sp-2); }
 }
 
 /* ============ 结算页 ============ */
@@ -110,6 +104,8 @@
   margin-top: var(--sp-4);
 }
 
+.result-actions .btn { min-width: 0; }
+
 @media (min-width: 1024px) {
   .result-actions { flex-direction: row; }
   .result-actions .btn { flex: 1; }
@@ -119,6 +115,7 @@
 /* ============ 启动过场 ============ */
 .boot-page {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -147,3 +144,252 @@
 }
 
 .settings-danger .card-title { color: var(--danger); }
+
+/* ============ 数据统计页（P7） ============ */
+
+/* 7 天 / 30 天切换：沿用 .seg 观感，占满一行等比分配（触控 44px 由 .seg button 保证） */
+.stats-range { width: 100%; }
+.stats-range .seg { width: 100%; }
+.stats-range button,
+.stats-range .seg button { flex: 1 1 0; min-width: 44px; }
+
+/* 图表卡：.chart-accuracy 是绝对定位覆盖层，所以 .chart-bars 必须是定位上下文 */
+.chart-card { padding: var(--sp-4); }
+
+.chart-bars {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: var(--sp-2);
+  height: clamp(132px, 38vw, 168px);
+  padding-top: var(--sp-2);
+}
+
+/* 等分列：flex:1 1 0 + min-width:0，30 列在 360px 下也不撑破（每一列都允许被压到 8px 级）
+ * overflow:hidden 是最后一道保险：万一某个日期标签超长，裁掉标签而不是撑宽页面。 */
+.chart-col {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--sp-1);
+  overflow: hidden;
+}
+
+/* 明确高度让 .chart-bar-fill 的内联 height:% 有参照；fill 从底部生长。
+ * 槽色 --bg-base：让 --grad-xp 两端（#6C5CE7 3.77:1 / #38BDF8 5.53:1）都过 1.4.11 的 3:1。 */
+.chart-bar {
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+  max-width: 34px;
+  flex: 1 1 auto;
+  min-height: 2px;
+  border-radius: var(--r-xs) var(--r-xs) 0 0;
+  background: var(--bg-base);
+  overflow: hidden;
+}
+
+.chart-bar-fill {
+  display: block;
+  width: 100%;
+  min-height: 2px;
+  border-radius: var(--r-xs) var(--r-xs) 0 0;
+  background: var(--grad-xp);
+  transition: height var(--dur-slower) var(--ease-out);
+}
+
+/* 当日零作答：虚线空槽（形状不同，不靠颜色单独表意） */
+.chart-bar.is-empty {
+  background: transparent;
+  border: 1px dashed var(--border-strong);
+}
+.chart-bar.is-empty .chart-bar-fill { display: none; }
+
+.chart-x {
+  flex: 0 0 auto;
+  max-width: 100%;
+  font-family: var(--font-mono);
+  font-size: var(--fs-caption);
+  line-height: 1;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* 近 30 天时逐列日期（12px × 30 列）在 360px 里物理上放不下：
+ * 一旦出现第 15 列就隐藏逐列日期，靠图例 + §7.4 要求的文字摘要 / 表格替代。
+ * 浏览器不支持 :has() 时该规则被忽略，但 .chart-col 的 overflow:hidden 仍保证不溢出。 */
+.chart-bars:has(.chart-col:nth-child(15)) .chart-x { display: none; }
+
+/* 正确率折线：内联 SVG 覆盖层，viewBox="0 0 100 100" + preserveAspectRatio="none"。
+ * 颜色设在 svg 自身：stroke="currentColor" 取的就是这里的值。--success 对 --bg-surface 8.28:1。 */
+.chart-accuracy {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  color: var(--success);
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-3);
+  margin-top: var(--sp-3);
+  font-size: var(--fs-caption);
+  color: var(--text-secondary);
+}
+
+.chart-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  min-width: 0;
+}
+
+/* 图例：柱 = 10×10 方块；折线 = 14×2 短横线。
+ * 两个图例必须「形状不同」而不只是颜色不同（色盲可辨）。 */
+.legend-dot {
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--grad-xp);
+}
+
+.legend-dot.is-line {
+  width: 14px;
+  height: 2px;
+  border-radius: var(--r-full);
+  background: var(--success);
+}
+
+/* 词库进度：每行「词库名 + 进度条 + 计数」 */
+.deck-progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.deck-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.deck-name {
+  flex: 0 1 34%;
+  min-width: 0;
+  font-size: var(--fs-small);
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.deck-bar {
+  flex: 1 1 auto;
+  min-width: 24px;
+  height: var(--sp-2);
+  border-radius: var(--r-full);
+  background: var(--bg-base);
+  overflow: hidden;
+}
+
+.deck-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--r-full);
+  background: var(--grad-xp);
+  transition: width var(--dur-xp) var(--ease-out);
+}
+
+.deck-count {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: var(--fs-caption);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* 小指标块 */
+.mini-metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1);
+  padding: var(--sp-3) var(--sp-2);
+  border-radius: var(--r-md);
+  background: var(--bg-surface-2);
+  text-align: center;
+  min-width: 0;
+}
+
+.mini-metric-value {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: var(--fs-h3);
+  font-weight: var(--fw-black);
+  line-height: 1.2;
+  color: var(--text-primary);
+  transform-origin: center;
+}
+
+/* 数字到账的弹跳（A11 的补充；keyframes 在 components.css，与 .stat-value.is-bump 同一套） */
+.mini-metric-value.is-bump { animation: wq-bump var(--dur-slower) var(--ease-spring); }
+
+.mini-metric-label {
+  font-size: var(--fs-caption);
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+/* 桌面：词库进度两列铺开（docs/02 §6.2 P7「指标卡两列」） */
+@media (min-width: 1024px) {
+  .deck-progress { display: grid; grid-template-columns: 1fr 1fr; column-gap: var(--sp-5); }
+  .chart-bars { height: 176px; }
+}
+
+/* ============ xs 断点（320–389px，docs/02 §6.1）============
+ * 目标：360px 下零横向溢出 + 关键信息不被安全区遮住 + 触控目标 ≥44px。
+ * 手段：收边距、缩 gap、缩装饰字号；绝不通过 overflow-x:hidden 掩盖问题。 */
+@media (max-width: 389px) {
+  .page { padding: var(--sp-3); }
+  .battle-body { padding: 0 var(--sp-3) var(--sp-3); }
+  .question-word { font-size: calc(var(--fs-h1) - 2px); }
+  .question-word.is-cn { font-size: calc(var(--fs-h2) - 2px); }
+  .options { gap: var(--sp-2); }
+
+  /* 长标签按钮：收紧左右内边距，宁可换行也不横向溢出 */
+  .btn { padding-inline: var(--sp-4); }
+
+  /* 新首页块：小屏收内边距与间距 */
+  .quest-card,
+  .chest-card,
+  .chart-card { padding: var(--sp-3); }
+  .quest-row { gap: var(--sp-2); }
+  .quest-row-icon { width: 22px; }
+  .chest-row { gap: var(--sp-3); }
+  .chest-icon { width: 56px; height: 56px; }
+  .empty-state { padding: var(--sp-6) var(--sp-3); }
+
+  /* 四宫格：保持 2×2（360px 下每格 160px 仍够），只收 gap */
+  .grid-4 { gap: var(--sp-2); }
+  .tile { min-height: 88px; }
+
+  /* 图表：列距压到 2px，30 列时每列约 8.6px；日期标签由上面的规则隐去 */
+  .chart-bars { gap: 2px; height: 128px; }
+  .mini-metric-value { font-size: var(--fs-body-lg); }
+  .mini-metric { padding: var(--sp-2) var(--sp-1); }
+
+  /* 设置页「标准/大/特大」这类 seg：收窄按钮内边距，让 3 个选项在 360px 内排成一行；
+   * 真放不下时基类的 flex-wrap:wrap 会换行（不横向滚动、不撑破页面）。 */
+  .seg button { padding-inline: var(--sp-2); }
+}

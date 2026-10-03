@@ -1,6 +1,14 @@
-/* components.css · 跨页复用组件
- * 来源：docs/02 §5.3 风格要点、§4 线框图；docs/04 T1.4 / T1.23
- * 责任边界：只放被两个以上页面复用的组件，不写页面专属布局。
+/* components.css · 跨页复用组件 + 状态动效层
+ * 来源：docs/02 §5.1 配色 / §5.2 字号 / §5.3 圆角与阴影 / §5.4 动效清单（A01–A20）
+ *       §6.1 断点策略 / §6.3 桌面增强 / §7.2 对比度 / §7.5 触控目标；docs/06 D21 / A15 / A16
+ * 责任边界：只放被两个以上页面复用的组件，不写页面专属布局（那是 pages.css 的事）。
+ *
+ * 本轮统一后的三条硬规则：
+ *   1) 卡片只有一套处理：--bg-surface + 1px --border + --r-lg + --ring-card，静止态不加投影（docs/02 §5.3）。
+ *   2) 所有会重复出现的数值都取自 tokens.css：半径 --r-*、间距 --sp-*、时长 --dur-*、缓动 --ease-*、
+ *      阴影 --shadow-*/--glow-*。只有图标尺寸、图形高度这类真正的几何尺寸保留字面量。
+ *   3) 状态类（.is-*）一律由 JS 增删，本文件只负责视觉。新增动画 ≤ 600ms（--dur-flash），
+ *      且全部落在 base.css 的 @media (prefers-reduced-motion: reduce) 与 :root[data-motion="reduced"] 兜底内。
  */
 
 /* ============ 页面容器 ============ */
@@ -11,14 +19,25 @@
   padding-bottom: calc(var(--sp-6) + env(safe-area-inset-bottom));
 }
 
-/* ============ 卡片 ============ */
-.card {
+/* ============ 卡片：唯一一套卡片处理（docs/02 §5.3） ============
+ * --bg-surface + 1px --border + --r-lg + --ring-card；静止态不加投影（深色底上投影几乎不可见且耗性能）。
+ * .home-cta-card / .chart-card 是本文件的「卡片」在页面里的实例，统一在这里给同样的表面处理。 */
+.card,
+.hud,
+.tile,
+.question-card,
+.quest-card,
+.chest-card,
+.home-cta-card,
+.chart-card,
+.empty-state {
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
   box-shadow: var(--ring-card);
-  padding: var(--sp-4);
 }
+
+.card { padding: var(--sp-4); }
 
 .card + .card { margin-top: var(--sp-3); }
 
@@ -35,7 +54,12 @@
   margin-bottom: var(--sp-3);
 }
 
-/* ============ 按钮 ============ */
+/* ============ 按钮 ============
+ * 完整状态矩阵：default / :hover / :focus-visible / :active / :disabled / [aria-disabled="true"]。
+ * 触控目标：.btn 56px、.btn-sm 44px（docs/02 §7.5 要求 ≥44×44）。
+ * 实心主色控件（.btn-primary / 选中的 .seg / 打开的 .switch）的焦点环改为内缩白环，
+ * 因为 --accent-text 压在 --accent 底上只有 1.4:1，看不出焦点；
+ * 白环压在 --accent 上是 4.86:1（深色主题）/ 6.14:1（浅色主题）。 */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -52,10 +76,14 @@
   border: 1px solid var(--border-strong);
   transition: transform var(--dur-fast) var(--ease-out),
               background-color var(--dur-fast) var(--ease-out),
+              border-color var(--dur-fast) var(--ease-out),
+              box-shadow var(--dur-fast) var(--ease-out),
               filter var(--dur-fast) var(--ease-out);
 }
 
-.btn:active { transform: scale(0.97); }
+.btn:hover:not(:disabled):not([aria-disabled="true"]) { filter: brightness(1.06); }
+
+.btn:active:not(:disabled):not([aria-disabled="true"]) { transform: scale(0.97); }
 
 .btn-primary {
   background: var(--grad-cta);
@@ -65,7 +93,11 @@
   box-shadow: var(--glow-accent);
 }
 
-.btn-primary:hover { filter: brightness(1.08); }
+.btn-primary:hover:not(:disabled):not([aria-disabled="true"]) { filter: brightness(1.08); }
+
+.btn-primary:active:not(:disabled):not([aria-disabled="true"]) { filter: brightness(0.96); }
+
+.btn-primary:focus-visible { outline-color: var(--accent-on); outline-offset: -3px; }
 
 .btn-ghost {
   background: transparent;
@@ -73,7 +105,11 @@
   color: var(--text-secondary);
 }
 
-.btn-ghost:hover { color: var(--text-primary); border-color: var(--text-muted); }
+.btn-ghost:hover:not(:disabled):not([aria-disabled="true"]) {
+  color: var(--text-primary);
+  border-color: var(--text-muted);
+  background: var(--bg-surface-2);
+}
 
 .btn-danger {
   background: var(--danger-bg);
@@ -81,6 +117,11 @@
   color: var(--danger);
 }
 
+.btn-danger:hover:not(:disabled):not([aria-disabled="true"]) { background: var(--danger-bg); filter: brightness(1.12); }
+
+.btn-danger:active:not(:disabled):not([aria-disabled="true"]) { filter: brightness(0.96); }
+
+/* 禁用态：所有按钮变体共用一套（放在变体之后，靠 .btn:disabled 的更高特异性覆盖底色） */
 .btn:disabled,
 .btn[aria-disabled="true"] {
   background: var(--bg-surface-2);
@@ -89,22 +130,55 @@
   box-shadow: none;
   cursor: not-allowed;
   filter: none;
+  transform: none;
 }
-.btn:disabled:active { transform: none; }
+
+.btn:disabled:active,
+.btn[aria-disabled="true"]:active { transform: none; }
 
 .btn-block { display: flex; width: 100%; }
 
+/* 小号按钮：视觉更紧凑，但命中区仍 ≥44px（docs/02 §7.5） */
 .btn-sm {
-  min-height: 40px;
+  min-height: 44px;
   padding: 0 var(--sp-4);
   font-size: var(--fs-small);
   border-radius: var(--r-sm);
 }
 
-/* ============ 进度条 ============ */
+/* 图标按钮：40px → 44px 命中区 */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-size: var(--fs-body);
+  transition: color var(--dur-base) var(--ease-out),
+              border-color var(--dur-base) var(--ease-out),
+              transform var(--dur-fast) var(--ease-out);
+}
+
+.icon-btn:hover:not(:disabled):not([aria-disabled="true"]) { color: var(--text-primary); border-color: var(--accent); }
+
+.icon-btn:active:not(:disabled):not([aria-disabled="true"]) { transform: scale(0.94); }
+
+.icon-btn:disabled,
+.icon-btn[aria-disabled="true"] {
+  color: var(--text-disabled);
+  border-color: var(--border);
+  background: var(--bg-surface-2);
+  cursor: not-allowed;
+}
+
+/* ============ 进度条（docs/02 §5.3：统一高 8px、--r-full、槽 --bg-surface-2、填充 --grad-xp） ============ */
 .progress {
   position: relative;
-  height: 8px;
+  height: var(--sp-2);
   border-radius: var(--r-full);
   background: var(--bg-surface-2);
   overflow: hidden;
@@ -112,6 +186,8 @@
 
 .progress > i {
   display: block;
+  position: relative;
+  overflow: hidden;   /* 让 .is-gain 的白光只扫在「已填充」这一段里，不扫到空槽上 */
   height: 100%;
   width: 100%;
   border-radius: var(--r-full);
@@ -121,7 +197,7 @@
   transition: transform var(--dur-xp) var(--ease-out);
 }
 
-.progress.is-thin { height: 4px; }
+.progress.is-thin { height: var(--sp-1); }
 
 .progress-row {
   display: flex;
@@ -129,7 +205,7 @@
   gap: var(--sp-2);
 }
 
-.progress-row .progress { flex: 1; }
+.progress-row .progress { flex: 1; min-width: 0; }
 
 .progress-label {
   font-family: var(--font-mono);
@@ -138,7 +214,7 @@
   white-space: nowrap;
 }
 
-/* XP 条升级白闪（A13） */
+/* XP 条升级白闪（A13，原有类名 .progress.is-flash 保持不变） */
 .progress.is-flash::after {
   content: "";
   position: absolute;
@@ -150,6 +226,23 @@
 @keyframes xp-flash {
   from { transform: translateX(-100%); }
   to   { transform: translateX(100%); }
+}
+
+/* XP 增加后的一次性增益脉冲：填充整条提亮 + 内部白光扫过一次（≤420ms） */
+.progress > i.is-gain { animation: wq-progress-gain var(--dur-slower) var(--ease-out); }
+
+.progress > i.is-gain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.85), transparent);
+  animation: xp-flash var(--dur-slow) linear;
+}
+
+@keyframes wq-progress-gain {
+  0%   { filter: brightness(1); }
+  40%  { filter: brightness(1.55); }
+  100% { filter: brightness(1); }
 }
 
 /* ============ chip / 徽标 ============ */
@@ -166,9 +259,65 @@
   white-space: nowrap;
 }
 
-.chip-gold { background: var(--gold-bg); color: var(--gold); }
-.chip-success { background: var(--success-bg); color: var(--success); }
-.chip-muted { background: var(--bg-surface-2); color: var(--text-muted); }
+/* 金色 / 绿色「同色 tint 上的小字」用 -text 变体：深色主题与原色同值（零视觉变化），
+ * 浅色主题下 --gold #946200 / --success #10855A 压在自己的 -bg 上只有 4.42:1 / 3.73:1，
+ * 换用 --gold-text #7A4F00 / --success-text #0A6B47 后分别为 6.01:1 / 4.98:1。 */
+.chip-gold { background: var(--gold-bg); color: var(--gold-text); }
+.chip-success { background: var(--success-bg); color: var(--success-text); }
+/* 原为 --text-muted：在 --bg-surface-2 上只有 3.92:1，不达正文 4.5:1，改用 --text-secondary（6.61:1） */
+.chip-muted { background: var(--bg-surface-2); color: var(--text-secondary); }
+
+/* 可点的 chip 才撑到 44px 命中区；纯展示 chip 保持紧凑（docs/02 §7.5） */
+button.chip,
+.chip[role="button"] {
+  min-height: 44px;
+  padding-inline: var(--sp-4);
+  cursor: pointer;
+}
+
+/* ============ 连击徽标（A09 蓝→紫→金；A10 外圈冲击波 + 数字跳字） ============
+ * 档位配色来自 tokens.css --combo-N-fg/-bg，每档前景对自身底色最差 ≥4.0:1。 */
+.combo-badge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--sp-3);
+  border-radius: var(--r-full);
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+  font-weight: var(--fw-bold);
+  background: var(--bg-surface-2);
+  color: var(--text-secondary);
+  animation: pop-in 260ms var(--ease-spring);
+}
+
+.combo-badge.tier-1 { background: var(--combo-1-bg); color: var(--combo-1-fg); }
+.combo-badge.tier-2 { background: var(--combo-2-bg); color: var(--combo-2-fg); }
+.combo-badge.tier-3 { background: var(--combo-3-bg); color: var(--combo-3-fg); }
+
+/* 每 3 连的爆发（A10）：数字弹一下 + 外圈冲击波扩散（共 420ms） */
+.combo-badge.is-burst { animation: wq-combo-pop var(--dur-slower) var(--ease-spring); }
+
+.combo-badge.is-burst::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--r-full);
+  border: 2px solid currentColor;
+  pointer-events: none;
+  animation: wq-combo-ring var(--dur-slower) var(--ease-out);
+}
+
+@keyframes wq-combo-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+
+@keyframes wq-combo-ring {
+  0%   { transform: scale(1);    opacity: 0.9; }
+  100% { transform: scale(2.1);  opacity: 0; }
+}
 
 /* ============ 选项按钮 ============ */
 .option {
@@ -190,8 +339,14 @@
               background-color var(--dur-base) var(--ease-out);
 }
 
-.option:hover:not(:disabled) { border-color: var(--accent-text); }
-.option:active:not(:disabled) { transform: scale(0.99); }
+.option:hover:not(:disabled):not([aria-disabled="true"]) { border-color: var(--accent-text); }
+.option:active:not(:disabled):not([aria-disabled="true"]) { transform: scale(0.99); }
+
+.option:disabled,
+.option[aria-disabled="true"] {
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
 
 .option-badge {
   flex: 0 0 auto;
@@ -208,7 +363,7 @@
   font-weight: var(--fw-bold);
 }
 
-.option-text { flex: 1; min-width: 0; }
+.option-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 
 .option-mark {
   flex: 0 0 auto;
@@ -223,7 +378,7 @@
   background: var(--success-bg);
   animation: pop-in var(--dur-base) var(--ease-spring);
 }
-.option.is-correct .option-mark { color: var(--success); }
+.option.is-correct .option-mark { color: var(--success-text); }
 
 .option.is-wrong {
   border: 2px solid var(--danger);
@@ -248,7 +403,9 @@
   80% { transform: translateX(3px); }
 }
 
-/* ============ 心形血量 ============ */
+/* ============ 心形血量 ============
+ * display 必须是 inline-block：<span> 上的 transform 会被忽略，否则 A08 的心碎动画等于没写。
+ * 颜色：--hp-full 实心 / --hp-empty 空心（D21 修复后对 --bg-surface 3.69:1、--bg-base 4.25:1）。 */
 .hearts {
   display: inline-flex;
   align-items: center;
@@ -257,8 +414,17 @@
   line-height: 1;
 }
 
-.heart { color: var(--hp-empty); transition: color var(--dur-base) var(--ease-out); }
+.heart {
+  display: inline-block;
+  color: var(--hp-empty);
+  transition: color var(--dur-base) var(--ease-out),
+              transform var(--dur-base) var(--ease-out);
+}
+
 .heart.is-full { color: var(--hp-full); }
+
+/* 失血（A08）：320ms；.is-breaking 是旧类名，保留兼容 */
+.heart.is-losing,
 .heart.is-breaking { animation: heart-break 320ms var(--ease-out); }
 
 @keyframes heart-break {
@@ -266,24 +432,6 @@
   45%  { transform: scale(1.35); }
   100% { transform: scale(0.9); }
 }
-
-/* ============ 连击徽标 ============ */
-.combo-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px var(--sp-3);
-  border-radius: var(--r-full);
-  font-family: var(--font-mono);
-  font-size: var(--fs-small);
-  font-weight: var(--fw-bold);
-  background: var(--bg-surface-2);
-  color: var(--text-secondary);
-  animation: pop-in 260ms var(--ease-spring);
-}
-
-.combo-badge.tier-1 { background: rgba(56, 189, 248, 0.18); color: #38BDF8; }
-.combo-badge.tier-2 { background: var(--accent-subtle); color: var(--accent-text); }
-.combo-badge.tier-3 { background: var(--gold-bg); color: var(--gold); }
 
 /* ============ 反馈条 ============ */
 .feedback {
@@ -306,13 +454,14 @@
   font-size: var(--fs-body-lg);
 }
 
-.feedback.is-correct .feedback-head { color: var(--success); }
+.feedback.is-correct .feedback-head { color: var(--success-text); }
 .feedback.is-wrong .feedback-head { color: var(--danger); }
 
 .feedback-body {
   margin-top: var(--sp-2);
   font-size: var(--fs-small);
   color: var(--text-secondary);
+  overflow-wrap: anywhere;
 }
 
 @keyframes slide-up {
@@ -334,20 +483,37 @@
   background: var(--bg-surface-2);
 }
 
+/* inline-block：让 .is-bump 的 transform 在 <span> 上也能生效 */
 .stat-value {
+  display: inline-block;
   font-family: var(--font-mono);
   font-size: var(--fs-h3);
   font-weight: var(--fw-black);
   line-height: 1.2;
+  transform-origin: center;
 }
+
 .stat-value.is-xp { color: var(--accent-text); }
 .stat-value.is-coin { color: var(--gold); }
 .stat-value.is-rate { color: var(--success); }
+/* P7 统计页语义：好 / 中性 */
+.stat-value.is-good { color: var(--success); }
+.stat-value.is-neutral { color: var(--text-primary); }
 
+/* XP / 金币到账：数字弹一下再落回（420ms spring，A11 的「数字滚动」补充） */
+.stat-value.is-bump { animation: wq-bump var(--dur-slower) var(--ease-spring); }
+
+@keyframes wq-bump {
+  0%   { transform: scale(1); }
+  38%  { transform: scale(1.28); }
+  100% { transform: scale(1); }
+}
+
+/* 原为 --text-muted：它落在 .stat 的 --bg-surface-2 上只有 3.92:1，不达 AA，改用 --text-secondary（6.61:1） */
 .stat-label {
   margin-top: var(--sp-1);
   font-size: var(--fs-caption);
-  color: var(--text-muted);
+  color: var(--text-secondary);
 }
 
 /* ============ HUD 状态条 ============ */
@@ -356,10 +522,6 @@
   align-items: center;
   gap: var(--sp-3);
   padding: var(--sp-3);
-  border-radius: var(--r-lg);
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  box-shadow: var(--ring-card);
 }
 
 .level-badge {
@@ -386,7 +548,7 @@
 .level-badge .lv-tag {
   font-size: 10px;
   letter-spacing: 0.08em;
-  color: var(--text-muted);
+  color: var(--text-secondary);
 }
 
 .hud-main { flex: 1; min-width: 0; }
@@ -433,20 +595,27 @@
   gap: var(--sp-1);
   min-height: 96px;
   padding: var(--sp-3);
-  border-radius: var(--r-lg);
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  box-shadow: var(--ring-card);
   text-align: left;
   transition: transform var(--dur-fast) var(--ease-out),
-              border-color var(--dur-base) var(--ease-out);
+              border-color var(--dur-base) var(--ease-out),
+              box-shadow var(--dur-base) var(--ease-out);
 }
-.tile:hover { border-color: var(--accent); }
-.tile:active { transform: scale(0.98); }
+.tile:hover:not(:disabled):not([aria-disabled="true"]) { border-color: var(--accent); }
+.tile:active:not(:disabled):not([aria-disabled="true"]) { transform: scale(0.98); }
+.tile:disabled,
+.tile[aria-disabled="true"] { opacity: 0.6; cursor: not-allowed; }
+
+/* docs/02 §6.3：悬停抬升 2px + --shadow-md 只在真有 hover 的设备上生效（手机端无此态） */
+@media (hover: hover) and (pointer: fine) {
+  .tile:hover:not(:disabled):not([aria-disabled="true"]) {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+}
 
 .tile-icon { font-size: var(--fs-h3); }
 .tile-name { font-size: var(--fs-body); font-weight: var(--fw-bold); }
-.tile-sub { font-size: var(--fs-caption); color: var(--text-muted); }
+.tile-sub { font-size: var(--fs-caption); color: var(--text-muted); overflow-wrap: anywhere; }
 
 /* ============ 提示条 ============ */
 .banner {
@@ -515,13 +684,16 @@
   align-items: center;
   justify-content: center;
   padding: var(--sp-4);
-  background: rgba(6, 9, 20, 0.8);
+  background: var(--scrim);
+  /* A18 的 2px 背景虚化：覆盖层是 fixed 且一次只覆盖一屏，不是滚动内容（硬约束允许） */
   backdrop-filter: blur(2px);
   animation: fade-in var(--dur-base) var(--ease-out);
 }
 
 .overlay-card {
   width: min(100%, 420px);
+  max-height: calc(100dvh - var(--sp-8));
+  overflow-y: auto;
   padding: var(--sp-5);
   border-radius: var(--r-xl);
   background: var(--bg-elevated);
@@ -534,7 +706,7 @@
 .overlay-title { font-size: var(--fs-h3); }
 .overlay-text { margin-top: var(--sp-2); color: var(--text-secondary); font-size: var(--fs-small); }
 .overlay-actions { display: flex; gap: var(--sp-3); margin-top: var(--sp-5); }
-.overlay-actions .btn { flex: 1; }
+.overlay-actions .btn { flex: 1; min-width: 0; }
 
 @keyframes fade-in {
   from { opacity: 0; }
@@ -569,7 +741,7 @@
   margin-top: var(--sp-1);
   font-size: var(--fs-caption);
   letter-spacing: 0.12em;
-  color: var(--text-muted);
+  color: var(--text-secondary);
 }
 
 .levelup-title {
@@ -601,6 +773,27 @@
   100% { transform: scale(1); }
 }
 
+/* 全屏升级金闪（A14 的「金光环」+ A13 的提亮，一次性）：JS 插入 .levelup-flash 即可。
+ * z-index 90 覆盖在 .overlay(80) 之上；pointer-events:none 保证不挡任何点击（硬约束：动效不阻塞输入）。 */
+.levelup-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 42%,
+              rgba(255, 255, 255, 0.72) 0%,
+              rgba(255, 201, 74, 0.45) 26%,
+              rgba(255, 201, 74, 0) 62%);
+  opacity: 0;
+  animation: wq-levelup-flash var(--dur-flash) var(--ease-out) 1 both;
+}
+
+@keyframes wq-levelup-flash {
+  0%   { opacity: 0; }
+  16%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
 /* ============ 战斗 HUD ============ */
 .battle-top {
   display: flex;
@@ -611,21 +804,7 @@
   margin-inline: auto;
 }
 
-.battle-top .spacer { flex: 1; }
-
-.icon-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 40px;
-  min-height: 40px;
-  border-radius: var(--r-sm);
-  border: 1px solid var(--border);
-  background: var(--bg-surface);
-  color: var(--text-secondary);
-  font-size: var(--fs-body);
-}
-.icon-btn:hover { color: var(--text-primary); border-color: var(--accent); }
+.battle-top .spacer { flex: 1; min-width: 0; }
 
 .battle-index {
   font-family: var(--font-mono);
@@ -637,10 +816,6 @@
 /* ============ 题目卡 ============ */
 .question-card {
   padding: var(--sp-5) var(--sp-4);
-  border-radius: var(--r-lg);
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  box-shadow: var(--ring-card);
   text-align: center;
 }
 
@@ -649,7 +824,9 @@
   font-size: var(--fs-h1);
   font-weight: var(--fw-bold);
   line-height: var(--lh-h1);
+  /* 长英文单词 / 外来词在 360px 下不得撑破视口（docs/02 §6 xs） */
   word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .question-word.is-cn { font-size: var(--fs-h2); line-height: var(--lh-h2); }
@@ -658,6 +835,7 @@
   margin-top: var(--sp-2);
   font-size: var(--fs-small);
   color: var(--text-muted);
+  overflow-wrap: anywhere;
 }
 
 .question-tools {
@@ -665,6 +843,7 @@
   justify-content: center;
   gap: var(--sp-2);
   margin-top: var(--sp-4);
+  flex-wrap: wrap;
 }
 
 .speak-btn {
@@ -678,8 +857,14 @@
   background: var(--bg-surface-2);
   color: var(--text-secondary);
   font-size: var(--fs-small);
+  transition: color var(--dur-base) var(--ease-out),
+              border-color var(--dur-base) var(--ease-out),
+              transform var(--dur-fast) var(--ease-out);
 }
-.speak-btn:hover { color: var(--text-primary); border-color: var(--accent); }
+.speak-btn:hover:not(:disabled):not([aria-disabled="true"]) { color: var(--text-primary); border-color: var(--accent); }
+.speak-btn:active:not(:disabled):not([aria-disabled="true"]) { transform: scale(0.97); }
+.speak-btn:disabled,
+.speak-btn[aria-disabled="true"] { color: var(--text-disabled); border-color: var(--border); cursor: not-allowed; }
 
 .speak-btn-lg {
   min-height: 72px;
@@ -703,6 +888,7 @@
   font-size: var(--fs-small);
   color: var(--text-secondary);
   text-align: left;
+  overflow-wrap: anywhere;
 }
 
 /* ============ 拼写输入 ============ */
@@ -714,6 +900,7 @@
 
 .spell-input {
   flex: 1;
+  min-width: 0;
   min-height: var(--h-option);
   padding: 0 var(--sp-4);
   border-radius: var(--r-sm);
@@ -726,6 +913,7 @@
 
 .spell-input::placeholder { color: var(--text-disabled); }
 .spell-input:focus { border-color: var(--accent); }
+.spell-input:disabled { color: var(--text-disabled); cursor: not-allowed; }
 
 .spell-hint {
   margin-top: var(--sp-2);
@@ -733,6 +921,7 @@
   font-size: var(--fs-small);
   color: var(--text-muted);
   letter-spacing: 0.12em;
+  overflow-wrap: anywhere;
 }
 
 /* ============ 底部操作区 ============ */
@@ -741,7 +930,7 @@
   bottom: 0;
   padding: var(--sp-4);
   padding-bottom: calc(var(--sp-4) + env(safe-area-inset-bottom));
-  background: linear-gradient(to top, var(--bg-base) 70%, rgba(15, 20, 36, 0));
+  background: linear-gradient(to top, var(--bg-base) 70%, var(--bg-base-0));
 }
 
 .battle-foot-inner {
@@ -751,7 +940,7 @@
   gap: var(--sp-3);
 }
 
-.battle-foot-inner .btn { flex: 1; }
+.battle-foot-inner .btn { flex: 1; min-width: 0; }
 
 /* ============ 结算页 ============ */
 .result-hero {
@@ -779,6 +968,18 @@
 
 .result-title { font-size: var(--fs-h2); }
 .result-sub { margin-top: var(--sp-2); font-size: var(--fs-small); color: var(--text-muted); }
+
+/* 结算页「距下一级还差 X XP」（v0.2 补 A7 第 5 个数字）：
+ * 既有卡片内的一行补充说明，只给排版与配色，不新增卡片/间距体系。
+ * 对比度：--text-secondary 对 --bg-surface 7.65:1（浅色白底 7.43:1）；
+ * 其中的 strong 用 --accent-text 4.87:1（浅色白底 7.52:1），两套主题都过 4.5:1。 */
+.xp-to-next {
+  margin-top: var(--sp-2);
+  font-size: var(--fs-small);
+  color: var(--text-secondary);
+}
+
+.xp-to-next strong { color: var(--accent-text); }
 
 .big-num {
   font-family: var(--font-mono);
@@ -823,8 +1024,8 @@
   font-size: var(--fs-small);
 }
 .wrong-item:last-child { border-bottom: 0; }
-.wrong-item .w { font-weight: var(--fw-bold); }
-.wrong-item .m { color: var(--text-muted); }
+.wrong-item .w { font-weight: var(--fw-bold); overflow-wrap: anywhere; }
+.wrong-item .m { color: var(--text-muted); overflow-wrap: anywhere; }
 
 details.disclosure > summary {
   cursor: pointer;
@@ -836,11 +1037,442 @@ details.disclosure > summary {
 details.disclosure > summary::-webkit-details-marker { display: none; }
 details.disclosure > summary::after { content: " ▾"; }
 
+/* ============ 空状态（docs/02「空状态」） ============
+ * 统一的友好空态：图标 + 标题 + 一行说明 +（可选）一个操作按钮。
+ * 虚线边框把它和「又一张卡」区分开；边框是装饰性的（1.94:1），信息全在文字里。 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-7) var(--sp-4);
+  text-align: center;
+  border-style: dashed;
+  border-color: var(--border-strong);
+}
+
+.empty-state-icon { font-size: var(--sp-8); line-height: 1; }
+.empty-state-title { font-size: var(--fs-body); font-weight: var(--fw-bold); color: var(--text-primary); }
+.empty-state-note {
+  max-width: 34ch;
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+.empty-state .btn { margin-top: var(--sp-2); }
+
+/* 兼容别名：单行居中说明（旧页面都用它，绝不改名） */
 .empty-note {
   padding: var(--sp-5) 0;
   text-align: center;
   color: var(--text-muted);
   font-size: var(--fs-small);
+}
+
+/* ============ 通用发放行 / 重练徽标（任务 + 宝箱 + 错题本重练共用） ============ */
+.reward-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-2) 0;
+  border-bottom: 1px solid var(--border);
+  font-size: var(--fs-small);
+  color: var(--text-secondary);
+}
+.reward-row:last-child { border-bottom: 0; }
+.reward-row > :first-child { min-width: 0; overflow-wrap: anywhere; }
+/* 右侧的 +N：等宽对齐 + 金色，视觉上明确「这是收益」 */
+.reward-row > :last-child {
+  font-family: var(--font-mono);
+  font-weight: var(--fw-bold);
+  color: var(--gold-text);
+  white-space: nowrap;
+}
+
+.reclaim-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 2px var(--sp-2);
+  border-radius: var(--r-full);
+  border: 1px solid var(--border);
+  background: var(--bg-surface-2);
+  color: var(--text-secondary);
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-medium);
+  white-space: nowrap;
+}
+/* 可重练 / 明天可重练 两种状态（颜色 + 文案双重编码，不靠颜色单独表意） */
+.reclaim-badge.is-ready { border-color: var(--success); background: var(--success-bg); color: var(--success-text); }
+.reclaim-badge.is-wait { border-color: var(--border-strong); background: var(--bg-surface-2); color: var(--text-secondary); }
+
+/* ============ 首页 · 每日任务卡 ============ */
+.quest-card {
+  padding: var(--sp-4);
+  /* 「主色点睛的头部」：3px 主色左沿 + 顶部渐隐的主色底，不改卡片半径与投影 */
+  border-left: 3px solid var(--accent);
+  background-image: linear-gradient(180deg, var(--accent-subtle) 0, transparent 96px);
+}
+
+.quest-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+  padding-bottom: var(--sp-3);
+  border-bottom: 1px solid var(--accent-subtle);
+}
+
+.quest-title {
+  font-size: var(--fs-small);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent-text);
+}
+
+.quest-reset {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: var(--fs-caption);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.quest-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+/* A04 列表入场：逐项 40ms 上浮 8px 淡入，最多延迟 8 项。
+ * animation-delay 在 base.css 的两条 reduced-motion 兜底里被清零，不会卡在不可见态。 */
+.quest-list > .quest-row { animation: wq-rise var(--dur-base) var(--ease-out) both; }
+.quest-list > .quest-row:nth-child(1) { animation-delay: 0ms; }
+.quest-list > .quest-row:nth-child(2) { animation-delay: 40ms; }
+.quest-list > .quest-row:nth-child(3) { animation-delay: 80ms; }
+.quest-list > .quest-row:nth-child(4) { animation-delay: 120ms; }
+.quest-list > .quest-row:nth-child(5) { animation-delay: 160ms; }
+.quest-list > .quest-row:nth-child(6) { animation-delay: 200ms; }
+.quest-list > .quest-row:nth-child(7) { animation-delay: 240ms; }
+.quest-list > .quest-row:nth-child(n+8) { animation-delay: 280ms; }
+
+@keyframes wq-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.quest-row {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-3);
+  padding: var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border);
+}
+
+.quest-row-icon {
+  flex: 0 0 auto;
+  width: 28px;
+  text-align: center;
+  font-size: var(--fs-body-lg);
+  line-height: 1;
+}
+
+.quest-row-main { flex: 1 1 140px; min-width: 0; }
+
+.quest-row-title {
+  font-size: var(--fs-small);
+  font-weight: var(--fw-bold);
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.quest-row-desc {
+  margin-top: 2px;
+  font-size: var(--fs-caption);
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+/* 任务进度：薄轨 + 沿用 .progress 的观感（--r-full、--grad-xp 填充、同样的过渡）
+ * 槽色用 --bg-base 而不是 .progress 的 --bg-surface-2：新组件的进度条本身长在
+ * --bg-surface-2 的行/块里，只有更深一层的槽才能同时满足「槽与容器可区分」与
+ * 「--grad-xp 的紫色端对槽 ≥3:1」（1.4.11）。既有 .progress（HUD XP 条）按 docs/02 §5.3 保持不动。 */
+.quest-progress,
+.chest-progress {
+  position: relative;
+  flex: 1 1 60px;
+  min-width: 40px;
+  height: 6px;
+  border-radius: var(--r-full);
+  background: var(--bg-base);
+  overflow: hidden;
+}
+
+.quest-row-main > .quest-progress,
+.quest-row-main > .chest-progress { margin-top: var(--sp-2); }
+
+.quest-progress > i,
+.chest-progress > i,
+.quest-progress-fill,
+.chest-progress-fill {
+  display: block;
+  height: 100%;
+  width: 100%;
+  border-radius: var(--r-full);
+  background: var(--grad-xp);
+  transform-origin: left center;
+  transition: transform var(--dur-xp) var(--ease-out);
+}
+
+/* 奖励 chip：「🪙10 +8XP」 */
+.quest-reward {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-left: auto;
+  padding: 2px var(--sp-3);
+  border-radius: var(--r-full);
+  background: var(--gold-bg);
+  color: var(--gold-text);
+  font-family: var(--font-mono);
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-bold);
+  white-space: nowrap;
+}
+
+/* 完成态：绿框 + 勾形图标 + 标题降一级但仍可读（不做删除线） */
+.quest-row.is-done {
+  border-color: var(--success);
+  background: var(--success-bg);
+}
+.quest-row.is-done .quest-row-icon { color: var(--success-text); }
+.quest-row.is-done .quest-row-title { color: var(--text-secondary); }
+.quest-row.is-done .quest-row-desc { color: var(--text-secondary); }
+.quest-row.is-done .quest-progress > i,
+.quest-row.is-done .quest-progress-fill { background: var(--success); }
+
+/* 每日任务全清加成 */
+.quest-bonus {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-top: var(--sp-3);
+  padding: var(--sp-3);
+  border-radius: var(--r-md);
+  border: 1px dashed var(--gold);
+  background: var(--gold-bg);
+  font-size: var(--fs-small);
+  color: var(--text-primary);
+}
+.quest-bonus.is-done { border-style: solid; border-color: var(--success); background: var(--success-bg); }
+
+/* ============ 首页 · 宝箱卡 ============ */
+.chest-card { padding: var(--sp-4); }
+
+.chest-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+}
+
+.chest-icon {
+  position: relative;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--r-full);
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-strong);
+  font-size: var(--fs-h2);
+  line-height: 1;
+}
+
+.chest-info { flex: 1 1 auto; min-width: 0; }
+.chest-title { font-size: var(--fs-body); font-weight: var(--fw-bold); }
+.chest-desc {
+  margin-top: var(--sp-1);
+  font-size: var(--fs-caption);
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.chest-shards {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+}
+
+/* 碎片：空心 = --text-muted 描边菱形（对 --bg-surface 4.54:1，不是「看不见的灰块」），
+ * 实心 = 金色渐变（图形对比 ≥3:1）。状态不靠颜色单独表意：还有 N/3 文字。 */
+.shard {
+  width: 16px;
+  height: 16px;
+  border-radius: var(--r-xs);
+  border: 1px solid var(--text-muted);
+  background: transparent;
+  transform: rotate(45deg);
+  transition: background-color var(--dur-base) var(--ease-out),
+              border-color var(--dur-base) var(--ease-out);
+}
+
+.shard.is-filled {
+  background: var(--grad-levelup);
+  border-color: var(--gold);
+  animation: wq-shard-fill var(--dur-slow) var(--ease-spring);
+}
+
+@keyframes wq-shard-fill {
+  0%   { transform: rotate(45deg) scale(0.6); }
+  60%  { transform: rotate(45deg) scale(1.15); }
+  100% { transform: rotate(45deg) scale(1); }
+}
+
+.chest-open-btn { width: 100%; margin-top: var(--sp-4); }
+
+.chest-result {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-top: var(--sp-4);
+  padding: var(--sp-4);
+  border-radius: var(--r-md);
+  border: 1px solid var(--gold);
+  background: var(--gold-bg);
+  animation: wq-chest-reveal var(--dur-slower) var(--ease-spring);
+}
+
+.chest-result-icon { flex: 0 0 auto; font-size: 28px; line-height: 1; }
+.chest-result-main { flex: 1 1 auto; min-width: 0; font-size: var(--fs-small); }
+.chest-result-reward {
+  font-family: var(--font-mono);
+  font-weight: var(--fw-bold);
+  color: var(--gold-text);
+  white-space: nowrap;
+}
+
+/* 稀有度不能只靠颜色：描边宽度 1/2/3px + 图标 26/32/40px + 底色/发光各不相同 */
+.chest-rarity-1 { border-color: var(--text-muted); border-width: 1px; }
+.chest-rarity-2 { border-color: var(--accent-text); border-width: 2px; background: var(--accent-subtle); }
+.chest-rarity-3 { border-color: var(--gold); border-width: 3px; background: var(--gold-bg); box-shadow: var(--glow-gold); }
+.chest-rarity-1 .chest-result-icon { font-size: 26px; }
+.chest-rarity-2 .chest-result-icon { font-size: 32px; }
+.chest-rarity-3 .chest-result-icon { font-size: 40px; }
+
+@keyframes wq-chest-reveal {
+  0%   { opacity: 0; transform: translateY(10px) scale(0.96); }
+  60%  { opacity: 1; transform: translateY(0) scale(1.02); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+/* ---- 宝箱状态类（JS 只负责增删，视觉在这里） ----
+ * .is-openable 闲置呼吸：有限 5 次（约 9s）后停在静态金色态，避免常驻动画耗电（硬约束）；
+ *            reduced-motion 下由全局兜底压成 1ms 一次，等于没有。
+ * .is-opening 开箱中：左右摇晃 + 金光（560ms，一次性）。
+ * .is-opened  已开箱：金色冲击波 + 整卡金光脉冲（560ms，一次性）。 */
+.chest-icon.is-openable,
+.chest-card.is-openable .chest-icon,
+.chest-row.is-openable .chest-icon {
+  border-color: var(--gold);
+  box-shadow: var(--glow-gold);
+  animation: wq-chest-idle 1.8s var(--ease-out) 5;
+}
+
+@keyframes wq-chest-idle {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-3px) scale(1.04); }
+}
+
+.chest-icon.is-opening,
+.chest-card.is-opening .chest-icon,
+.chest-row.is-opening .chest-icon {
+  border-color: var(--gold);
+  box-shadow: var(--glow-gold);
+  animation: wq-chest-shake var(--dur-flash) var(--ease-out);
+}
+
+@keyframes wq-chest-shake {
+  0%   { transform: rotate(0) scale(1); }
+  15%  { transform: rotate(-8deg) scale(1.04); }
+  30%  { transform: rotate(8deg) scale(1.06); }
+  45%  { transform: rotate(-7deg) scale(1.08); }
+  60%  { transform: rotate(6deg) scale(1.1); }
+  80%  { transform: rotate(-3deg) scale(1.12); }
+  100% { transform: rotate(0) scale(1.14); }
+}
+
+.chest-icon.is-opened,
+.chest-card.is-opened .chest-icon,
+.chest-row.is-opened .chest-icon {
+  border-color: var(--gold);
+  box-shadow: var(--glow-gold);
+  animation: wq-chest-burst var(--dur-flash) var(--ease-spring);
+}
+
+.chest-icon.is-opened::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 2px solid var(--gold);
+  pointer-events: none;
+  animation: wq-combo-ring var(--dur-flash) var(--ease-out);
+}
+
+@keyframes wq-chest-burst {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.22); }
+  100% { transform: scale(1); }
+}
+
+.chest-card.is-opened,
+.chest-row.is-opened { animation: wq-chest-card-glow var(--dur-flash) var(--ease-out); }
+
+@keyframes wq-chest-card-glow {
+  0%   { box-shadow: 0 0 0 0 rgba(255, 201, 74, 0); }
+  35%  { box-shadow: 0 0 28px 2px rgba(255, 201, 74, 0.5); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 201, 74, 0); }
+}
+
+/* ============ 解锁扫光（A15：成就 / 每日任务完成） ============
+ * .is-unlocked 加在 .quest-row / .reward-row / 任意列表行上：底部泛绿一次 + 一道白光从左扫过（560ms）。 */
+.quest-row.is-unlocked,
+.reward-row.is-unlocked {
+  position: relative;
+  overflow: hidden;
+  animation: wq-row-unlock var(--dur-flash) var(--ease-out);
+}
+
+.quest-row.is-unlocked::after,
+.reward-row.is-unlocked::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(100deg, transparent 20%, rgba(255, 255, 255, 0.16) 50%, transparent 80%);
+  animation: wq-sweep var(--dur-flash) var(--ease-out);
+}
+
+@keyframes wq-row-unlock {
+  0%   { background-color: var(--success-bg); }
+  100% { background-color: transparent; }
+}
+
+@keyframes wq-sweep {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(100%); }
 }
 
 /* ============ 设置页 ============ */
@@ -866,6 +1498,13 @@ details.disclosure > summary::after { content: " ▾"; }
   border: 1px solid var(--border-strong);
   transition: background-color var(--dur-base) var(--ease-out);
 }
+/* 触控目标 ≥44px：视觉仍是 32px 高的胶囊，靠伪元素上下各外扩 6px（docs/02 §7.5） */
+.switch::before {
+  content: "";
+  position: absolute;
+  inset: -6px 0;
+  border-radius: var(--r-full);
+}
 .switch::after {
   content: "";
   position: absolute;
@@ -879,10 +1518,17 @@ details.disclosure > summary::after { content: " ▾"; }
               background-color var(--dur-base) var(--ease-out);
 }
 .switch[aria-checked="true"] { background: var(--accent); border-color: var(--accent); }
-.switch[aria-checked="true"]::after { transform: translateX(20px); background: #fff; }
+.switch[aria-checked="true"]::after { transform: translateX(20px); background: var(--accent-on); }
+/* 打开态底色是 --accent：焦点环改内缩白环（4.86:1 深 / 6.14:1 浅），否则看不见焦点 */
+.switch[aria-checked="true"]:focus-visible { outline-color: var(--accent-on); outline-offset: -3px; }
+.switch:disabled,
+.switch[aria-disabled="true"] { opacity: 0.55; cursor: not-allowed; }
 
 .seg {
   display: inline-flex;
+  flex-wrap: wrap;          /* xs 下宁可换行也不横向溢出（docs/02 §6.1） */
+  align-items: stretch;
+  max-width: 100%;
   padding: 2px;
   gap: 2px;
   border-radius: var(--r-full);
@@ -890,12 +1536,23 @@ details.disclosure > summary::after { content: " ▾"; }
   border: 1px solid var(--border);
 }
 .seg button {
-  padding: 4px var(--sp-3);
+  flex: 1 1 auto;
+  min-width: 44px;
+  min-height: 44px;         /* 触控目标 ≥44×44（docs/02 §7.5） */
+  padding: var(--sp-1) var(--sp-3);
   border-radius: var(--r-full);
   font-size: var(--fs-caption);
   color: var(--text-secondary);
+  transition: background-color var(--dur-base) var(--ease-out),
+              color var(--dur-base) var(--ease-out);
 }
 .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-on); }
+.seg button:focus-visible { outline-offset: -2px; }
+.seg button[aria-pressed="true"]:focus-visible { outline-color: var(--accent-on); outline-offset: -3px; }
+.seg button:disabled,
+.seg button[aria-disabled="true"] { color: var(--text-disabled); cursor: not-allowed; }
+.seg button:hover:not(:disabled):not([aria-disabled="true"]) { color: var(--text-primary); }
+.seg button[aria-pressed="true"]:hover:not(:disabled) { color: var(--accent-on); }
 
 /* ============ 全屏红闪（A16） ============ */
 .flash-screen {

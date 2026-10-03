@@ -96,6 +96,72 @@
     tone(988, 0.07, 0.12, 'triangle', 0.1);
   }
 
+  /** v0.2：分入账的「小加分」音（比答对更轻，用于任务完成/碎片 +1） */
+  function sfxScore() {
+    if (!enabled()) return;
+    tone(880, 0, 0.06, 'triangle', 0.07);
+  }
+
+  /** v0.2：每日任务完成的确认音（三音上行，轻快但不抢结算音） */
+  function sfxQuestDone() {
+    if (!enabled()) return;
+    tone(659.25, 0, 0.1, 'triangle', 0.09);
+    tone(987.77, 0.08, 0.14, 'triangle', 0.09);
+  }
+
+  /** v0.2：错题本打回来的确认音 */
+  function sfxReclaim() {
+    if (!enabled()) return;
+    tone(587.33, 0, 0.1, 'sine', 0.1);
+    tone(880, 0.09, 0.16, 'sine', 0.1);
+  }
+
+  /**
+   * v0.2：开箱音。档位越高音阶越多（普通 3 音 / 稀有 5 音 / 传说 7 音上行），
+   * 仍然全部是 WebAudio 实时合成，不引入任何音频文件。
+   */
+  function sfxChestOpen(tier) {
+    if (!enabled()) return;
+    const t = Number(tier) || 1;
+    const base = [523.25, 659.25, 783.99, 987.77, 1174.66, 1396.91, 1567.98];
+    const count = t >= 3 ? 7 : (t >= 2 ? 5 : 3);
+    for (let i = 0; i < count; i++) {
+      tone(base[i], i * 0.075, 0.16, 'triangle', 0.1);
+    }
+    if (t >= 2) tone(392, 0, 0.3, 'sine', 0.06);
+  }
+
+  /**
+   * v0.2：首次用户手势时解锁 AudioContext。
+   * 浏览器自动播放策略下，AudioContext 必须在用户手势之后才能真正发声；
+   * 之前只依赖「作答时顺手 resume」，在有音效的首次作答前可能已经错过了手势窗口。
+   * 这里在页面第一次 pointerdown / keydown / touchstart 时创建并 resume，只绑一次、失败静默。
+   *
+   * 注意（踩过的坑）：**解锁后不要 removeEventListener**。
+   * 事件派发器（浏览器与 dev/domshim.mjs 都一样）在派发时会遍历监听器数组，
+   * 若在第一个监听器里删掉后面的监听器，同一个事件上排在后面的监听器就会被跳过 ——
+   * 真实表现是「刷新页面后的第一次按键被吞掉」（键盘用户按 1 作答，第一次没反应）。
+   * 这里用一个幂等标志 `unlocked` 保证只执行一次，监听器本体保留、后续调用直接 return。
+   */
+  let unlocked = false;
+  function unlock() {
+    if (unlocked) return;
+    unlocked = true;
+    try {
+      const ac = ensureCtx();
+      if (ac && ac.state === 'suspended' && typeof ac.resume === 'function') ac.resume();
+    } catch (e) { /* 静默 */ }
+  }
+
+  function bindUnlock() {
+    try {
+      if (typeof document === 'undefined' || !document.addEventListener) return;
+      ['pointerdown', 'keydown', 'touchstart'].forEach(function (type) {
+        document.addEventListener(type, unlock);
+      });
+    } catch (e) { /* 静默 */ }
+  }
+
   /** TTS 可用性探测 */
   function ttsAvailable() {
     try {
@@ -140,6 +206,12 @@
     sfxCoin: sfxCoin,
     sfxBadge: sfxBadge,
     sfxCombo: sfxCombo,
+    sfxScore: sfxScore,
+    sfxQuestDone: sfxQuestDone,
+    sfxReclaim: sfxReclaim,
+    sfxChestOpen: sfxChestOpen,
+    unlock: unlock,
+    bindUnlock: bindUnlock,
     ttsAvailable: ttsAvailable,
     speak: speak,
     cancelSpeak: cancelSpeak

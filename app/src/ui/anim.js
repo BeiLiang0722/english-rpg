@@ -34,7 +34,7 @@
    * 数字滚动（A11，400ms）。reducedMotion 时直接赋值。
    * @param {HTMLElement} el
    * @param {number} to
-   * @param {object} opts { duration, prefix, suffix }
+   * @param {object} opts { duration, prefix, suffix, onDone }
    */
   function rollNumber(el, to, opts) {
     if (!el) return;
@@ -42,7 +42,12 @@
     const target = Number(to) || 0;
     const prefix = o.prefix || '';
     const suffix = o.suffix || '';
-    if (reducedMotion()) { el.textContent = prefix + target + suffix; return; }
+    const done = typeof o.onDone === 'function' ? o.onDone : null;
+    if (reducedMotion()) {
+      el.textContent = prefix + target + suffix;
+      if (done) done();
+      return;
+    }
 
     const duration = Number(o.duration) || 400;
     const start = window.performance && window.performance.now ? window.performance.now() : Date.now();
@@ -51,7 +56,10 @@
       const eased = 1 - Math.pow(1 - t, 3);
       el.textContent = prefix + Math.round(target * eased) + suffix;
       if (t < 1) window.requestAnimationFrame(frame);
-      else el.textContent = prefix + target + suffix;
+      else {
+        el.textContent = prefix + target + suffix;
+        if (done) done();
+      }
     }
     window.requestAnimationFrame(frame);
   }
