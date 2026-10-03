@@ -78,6 +78,7 @@ english-rpg/
     ├── selfcheck.mjs            在 Node 里跑同一套数值断言（67 条）
     ├── sim-economy.mjs          v0.2 新增：30 天经济模拟（A8 四条区间 + 2 条入账链路断言）
     ├── check-mobile.mjs         v0.2 新增：移动端静态检查（viewport / 断点 / border-box / 断行 / 触控目标）
+    ├── verify-crossday.mjs      v0.2 新增：跨天结算 + 存档往返主线（写盘后按生产读档路径读回）
     ├── dom-e2e.mjs              用极简 DOM 在 Node 里跑 99 条端到端验收
     ├── domshim.mjs              极简 DOM + 虚拟时钟 + 可注入的 localStorage 故障（写失败/配额/静默丢写/多标签事件）
     ├── e2e.mjs                  真实浏览器 CDP 端到端脚本（需可用的 headless 浏览器）
@@ -131,6 +132,7 @@ node dev/selfcheck.mjs        # 数值与状态机断言：期望「67/67 PASS�
 node dev/dom-e2e.mjs          # DOM 端到端：期望「99/99 通过，失败 0」
 node dev/sim-economy.mjs      # 30 天经济模拟（A8 四条区间 + 2 条入账链路）：详见输出末尾的断言汇总
 node dev/check-mobile.mjs     # 移动端静态检查（360px 不溢出/不缩放/点击区 ≥44px）：期望「通过（9 项）」
+node dev/verify-crossday.mjs  # 跨天结算 + 存档往返主线（3 个自然日 + 跨月）：期望「29/29 PASS」
 ```
 
 > `sim-economy.mjs` 默认同时跑两套口径：`--scope=full`（当前生产路径，含每日任务/宝箱）与
@@ -139,6 +141,10 @@ node dev/check-mobile.mjs     # 移动端静态检查（360px 不溢出/不缩�
 >
 > `check-mobile.mjs` 只做**静态**判定（解析 4 个 CSS 文件与 `index.html` 的 viewport），
 > 能证明「声明层面」达标，**不能**证明真机渲染后没有横向滚动条 —— 后者仍须人眼在 360px 设备模拟器里复核（见 §5 已知限制第 5 条）。
+>
+> `verify-crossday.mjs` 是「新增机制落进 localStorage 并跨天正确结算」这条要求的直接证据：
+> 它逐日注入本地日期，每天结束把存档写盘再按生产读档路径读回，断言跨天重建/归零/幂等/碎片携带/
+> 错题本冷却/跨月边界/字段确实落盘。注意：跨天是**注入日期**模拟的，不是真的等了一天。
 
 ---
 
