@@ -1,0 +1,64 @@
+# .github/workflows/pages.yml
+# 把 app/ 目录发布到 GitHub Pages（方案 B）。
+#
+# 为什么需要这个工作流：
+#   本仓库的根是 english-rpg/，而游戏入口 index.html 在 app/ 下；
+#   GitHub Pages 的「Deploy from a branch」模式只能选 / (root) 或 /docs，
+#   无法指定任意子目录，所以这里用 Actions 制品的方式把 app/ 作为发布目录。
+#
+# 前置（需在 GitHub 网页上做一次，否则 deploy 步骤会失败）：
+#   Settings → Pages → Build and deployment → Source 选「GitHub Actions」
+#
+# 触发条件：push 到 main 且改动 app/** 或本文件；也可在 Actions 页面手动
+#           Run workflow（下方 workflow_dispatch）。
+#
+# 站点地址：https://beiliang0722.github.io/english-rpg/
+# 说明：该站点是独立来源（https），它的 localStorage 与「双击 app/index.html」
+#       的 file:// 是两份互不相通的数据；App 本身无需任何改动即可在此运行
+#       （资源全是相对路径 + hash 路由）。
+# 注意：私有仓库在免费账号下不可用 Pages；若把仓库转为私有，本工作流会失败。
+
+name: Deploy app to Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: 打包 app/
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Upload app/ as Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: app
+
+  deploy:
+    name: 部署到 Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
