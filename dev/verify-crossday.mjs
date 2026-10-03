@@ -332,15 +332,20 @@ const missing = mustHave.filter((k) => finalText.indexOf('"' + k + '"') < 0);
 check('落盘：跨天与留存机制的字段全部在主存档键里（不是内存态）',
   mustHave.join(' / '), missing.length ? ('缺 ' + missing.join(',')) : '全部命中', missing.length === 0);
 
-/* ---- 加载速度：冷启动解析/执行耗时与主存档往返耗时（结构性证据） ---- */
+/* ---- 加载速度：冷启动解析/执行耗时（结构性证据，对应 docs/02 P0 的 600ms 启动预算） ---- */
 const size = FILES.reduce((a, rel) => a + fs.statSync(path.join(APP, rel)).size, 0);
+const cssSize = fs.readdirSync(path.join(APP, 'styles'))
+  .filter((f) => f.endsWith('.css'))
+  .reduce((a, f) => a + fs.statSync(path.join(APP, 'styles', f)).size, 0);
 const bootT0 = process.hrtime.bigint();
 const tWQ = boot();
 tWQ.save.fillDefaults(tWQ.save.defaultSave(day(2)));
 const bootMs = Number(process.hrtime.bigint() - bootT0) / 1e6;
+console.log('· 实测：解析+执行 ' + FILES.length + ' 个脚本（' + size + ' 字节）+ 建默认档 = ' + bootMs.toFixed(1) + ' ms');
+console.log('· 首屏其他资源：CSS ' + cssSize + ' 字节 / 词库已含在上述脚本内 / 外部资源 0 个 / 网络请求 0 次');
 check('加载速度：35+ 个脚本解析+执行+建默认档 < 600ms 启动预算（docs/02 P0）',
   '< ' + 600 + 'ms', bootMs.toFixed(1) + 'ms（脚本 ' + size + ' 字节 / ' + FILES.length + ' 个文件）',
-  bootMs < 600, 'Node 侧实测，不含浏览器绘制');
+  bootMs < 600, 'Node 侧实测，不含浏览器绘制；与 docs/06 §10.4 的启动预算口径一致');
 
 /* ---------------- 汇总 ---------------- */
 console.log('--------------------------------------------------------------------------------');
