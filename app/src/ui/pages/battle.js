@@ -12,23 +12,34 @@
   const B = WQ.balance;
 
   let questionShownAt = Date.now();
+  /* v0.2：上一帧的血量，用于给「刚掉的那颗心」加 is-losing 动效；以及上一帧的 XP，用于得分弹动 */
+  let prevHpLeft = null;
+  let prevXp = 0;
+  /* v0.2：本帧被侦查之眼排除的选项下标（键盘忽略它） */
+  let excludeIdx = -1;
+  /* v0.2：当前正在渲染的 roundId，用于在新的一局开始时重置动效基准 */
+  let currentRoundId = null;
 
   function session() { return WQ.state.session; }
 
-  /** 血量心形 */
-  function heartsHtml(hpLeft, hpMax) {
+  /** 血量心形（v0.2：刚失去的那颗心加 .is-losing，触发心碎动效 A08） */
+  function heartsHtml(hpLeft, hpMax, justLostIndex) {
     const out = [];
     for (let i = 0; i < hpMax; i++) {
-      out.push('<span class="heart' + (i < hpLeft ? ' is-full' : '') + '">♥</span>');
+      const cls = ['heart'];
+      if (i < hpLeft) cls.push('is-full');
+      if (i === justLostIndex) cls.push('is-losing');
+      out.push('<span class="' + cls.join(' ') + '">♥</span>');
     }
     return '<span class="hearts" role="img" aria-label="剩余 ' + hpLeft + ' 颗心，共 ' + hpMax + ' 颗">' + out.join('') + '</span>';
   }
 
-  /** 连击徽标（3–4 蓝 / 5–7 紫 / ≥8 金） */
-  function comboHtml(combo) {
+  /** 连击徽标（3–4 蓝 / 5–7 紫 / ≥8 金；刚命中档位时加 is-burst 播放冲击波动效 A09/A10） */
+  function comboHtml(combo, res) {
     if (Number(combo) < 3) return '';
     const tier = combo >= 8 ? 3 : (combo >= 5 ? 2 : 1);
-    return '<span class="combo-badge tier-' + tier + '">×' + U.esc(combo) + '</span>';
+    const burst = !!(res && res.comboTiersHit && res.comboTiersHit.length);
+    return '<span class="combo-badge tier-' + tier + (burst ? ' is-burst' : '') + '">×' + U.esc(combo) + '</span>';
   }
 
   /** 题目卡（按题型给不同题面） */
@@ -79,24 +90,34 @@
   function optionsHtml(q, res) {
     const letters = ['A', 'B', 'C', 'D'];
     const revealed = !!res;
+    /* v0.2 侦查之眼：开局排除 1 个错误选项（每题 1 次，共 3 次），被排除项置灰且不可点 */
+    const excluded = revealed ? -1 : WQ.questionPool.scoutExcludeIndex(q, WQ.state.session);
     const list = (q.options || []).map(function (opt, i) {
       const cls = ['option'];
       let mark = '';
-      if (revealed) {
+      if (i === excluded) {
+        cls.push('is-excluded');
+        mark = '🚫';
+      } else if (revealed) {
         if (opt.correct) { cls.push('is-correct'); mark = '✓'; }
         else if (String(res.answerIndex) === String(i)) { cls.push('is-wrong'); mark = '✗'; }
         else cls.push('is-dim');
       }
       const label = opt.text;
+      const disabled = revealed || i === excluded;
       return '<button class="' + cls.join(' ') + '" type="button" role="radio" aria-checked="' + (revealed && opt.correct ? 'true' : 'false') + '"' +
-        (revealed ? ' disabled' : '') +
+        (disabled ? ' disabled' : '') +
+        (i === excluded ? ' aria-label="已被侦查之眼排除"' : '') +
         ' data-action="answer" data-id="' + i + '">' +
         '<span class="option-badge">' + letters[i] + '</span>' +
         '<span class="option-text"' + (q.type === 'Q2' || q.type === 'Q4' ? ' lang="en"' : '') + '>' + U.esc(label) + '</span>' +
         (mark ? '<span class="option-mark">' + mark + '</span>' : '') +
         '</button>';
     });
-    return '<div class="options" role="radiogroup" aria-label="选项">' + list.join('') + '</div>';
+    const hint = excluded >= 0
+      ? '<p class="overlay-text scout-hint" role="status">👁️ 侦查之眼已排除 1 个错误选项（本局剩余 ' + Math.max(0, Number(WQ.state.session.scoutEyeRemaining) || 0) + ' 次）</p>'
+      : '';
+    return '<div class="options" role="radiogroup" aria-label="选项">' + list.join('') + '</div>' + hint;
   }
 
   /** 拼写输入区 */
@@ -124,16 +145,21 @@
     const body = [];
     if (res.approximate) body.push('≈ 近似拼写，记为未掌握');
     if (!isCorrect && WQ.state.settings.showAnswerOnWrong) {
-      body.push('正确答案：' + (q.type === 'Q1' ? res.correctText : q.word) + '　' + U.esc(q.meaningCn));
+      /* v0.2（修验收报告 D16）：Q1 的 correctText 就是 meaningCn，直接打印两遍会重复 */
+      const answerText = (q.type === 'Q1')
+        ? U.esc(res.correctText || res.meaningCn || q.meaningCn)
+        : U.esc(q.word) + '　' + U.esc(q.meaningCn);
+      body.push('正确答案：' + answerText);
     }
     if (isCorrect) body.push(U.esc(q.meaningCn));
     if (res.comboTiersHit && res.comboTiersHit.length) {
       body.push('🔥 连击 ×' + res.combo + '　+' + res.comboTiersHit.reduce(function (a, t) { return a + B.xp.combo[t]; }, 0) + ' XP');
     }
+    if (res.revived) body.push('🎭 替身稻草人替你挡了一下');
     if (!isCorrect && !res.skipped) body.push('剩余 ' + res.hpLeft + ' 颗心');
     return [
       '<div class="feedback ' + (isCorrect ? 'is-correct' : 'is-wrong') + '" role="status">',
-      '  <div class="feedback-head">' + head + '</div>',
+      '  <div class="feedback-head' + (isCorrect && res.xpGained ? ' is-bump' : '') + '">' + head + '</div>',
       body.length ? '  <div class="feedback-body">' + body.join('<br>') + '</div>' : '',
       '</div>'
     ].join('');
@@ -167,6 +193,19 @@
     const res = s.judged ? s.lastResult : null;
     if (!res) questionShownAt = Date.now();
 
+    /* v0.2 动效：算「刚掉的那颗心」与「本帧是否有得分」 */
+    /* 开局（从营地/结算跳进来后本页首次渲染）时清掉上一局的动效基准 */
+    if (currentRoundId !== s.roundId) {
+      currentRoundId = s.roundId;
+      prevHpLeft = null;
+      prevXp = 0;
+    }
+    const lostIndex = (prevHpLeft != null && s.hpLeft < prevHpLeft) ? s.hpLeft : -1;
+    prevHpLeft = s.hpLeft;
+    const xpBump = s.xpGained > prevXp;
+    prevXp = s.xpGained;
+    excludeIdx = res ? -1 : WQ.questionPool.scoutExcludeIndex(q, s);
+
     WQ.shell.setActions(actions);
     const pct = s.totalQuestions ? (s.index / s.totalQuestions) : 0;
     WQ.shell.render([
@@ -175,12 +214,12 @@
       '    <button class="icon-btn" type="button" data-action="exit" aria-label="退出本局">✕</button>',
       '    <span class="spacer"></span>',
       '    <span class="battle-index">第 ' + (s.index + 1) + ' / ' + s.totalQuestions + ' 题</span>',
-      '    ' + comboHtml(s.combo),
+      '    ' + comboHtml(s.combo, res),
       '    <span class="spacer"></span>',
-      '    ' + heartsHtml(s.hpLeft, s.hpMax),
+      '    ' + heartsHtml(s.hpLeft, s.hpMax, lostIndex),
       '  </div>',
-      '  <div style="max-width:var(--w-page);margin:0 auto;padding:0 16px">',
-      '    <div class="progress is-thin" role="progressbar" aria-valuemin="0" aria-valuemax="' + s.totalQuestions + '" aria-valuenow="' + s.index + '" aria-label="本局进度">',
+      '  <div class="battle-progress-wrap">',
+      '    <div class="progress is-thin' + (xpBump ? ' is-gain' : '') + '" role="progressbar" aria-valuemin="0" aria-valuemax="' + s.totalQuestions + '" aria-valuenow="' + s.index + '" aria-label="本局进度">',
       '      <i data-progress-init="' + pct + '" style="transform:scaleX(' + pct + ')"></i>',
       '    </div>',
       '  </div>',
@@ -207,11 +246,17 @@
   function answerChoice(index) {
     const s = session();
     if (!s || s.judged) return;
+    /* 被侦查之眼排除的选项不可作答（按钮已 disabled，这里再挡一次键盘路径） */
+    if (Number(index) === excludeIdx) { WQ.toast.show('该选项已被侦查之眼排除'); return; }
     const q = WQ.flow.currentQuestion();
+    const isReclaimRound = s.source === 'wrongBook';
     const res = WQ.flow.answerCurrent({ answer: String(index), ms: Date.now() - questionShownAt });
     if (!res) return;
     res.answerIndex = Number(index);
-    if (res.correct) WQ.audio.sfxCorrect(); else WQ.audio.sfxWrong();
+    if (res.correct) {
+      WQ.audio.sfxCorrect();
+      if (isReclaimRound && WQ.audio.sfxReclaim && !res.skipped) WQ.audio.sfxReclaim();
+    } else WQ.audio.sfxWrong();
     if (res.comboTiersHit && res.comboTiersHit.length) WQ.audio.sfxCombo();
     render();
     if (res.isDefeat && !res.revived) return failOut();
@@ -250,7 +295,11 @@
       render();
     },
     retry: function () {
-      if (WQ.flow.retryCurrent()) { WQ.toast.show('重试本题，不扣心'); render(); }
+      if (WQ.flow.retryCurrent()) {
+        prevHpLeft = null;   /* 重试不播心碎动效 */
+        WQ.toast.show('重试本题，不扣心');
+        render();
+      }
     },
     next: function () {
       const s = session();
@@ -302,6 +351,7 @@
       if (/^[1-4]$/.test(evt.key)) {
         if (s.judged) return;
         const idx = Number(evt.key) - 1;
+        if (idx === excludeIdx) { evt.preventDefault(); WQ.toast.show('该选项已被侦查之眼排除'); return; }
         if ((q.options || [])[idx]) { evt.preventDefault(); answerChoice(idx); }
       }
     }

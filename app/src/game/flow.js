@@ -20,7 +20,7 @@
 
   /**
    * 开一局。
-   * @param {object} opts { source:'normal'|'wrongBook', now:Date, rnd:function }
+   * @param {object} opts { source:'normal'|'wrongBook', wordIds:Array, reclaimOnly:boolean, now:Date, rnd:function }
    * @returns {object|null} session；词库为空时返回 null
    */
   function createSession(opts) {
@@ -37,10 +37,41 @@
     const source = o.source === 'wrongBook' ? 'wrongBook' : 'normal';
     const ttsAvailable = WQ.audio ? WQ.audio.ttsAvailable() : false;
 
+    /* v0.2：开局前先做一次跨天结算 + 记「今日登场」，保证每日任务/宝箱/每日首局在任意入口都收敛。
+       enterDay 返回的任务奖励必须在这里真正入账（quest.grant 只记账、不写 profile）。 */
+    if (WQ.game && WQ.game.rolloverDaily) WQ.game.rolloverDaily(save, now);
+    if (WQ.quest) {
+      const q = WQ.quest.enterDay(save, now);
+      if (q && (q.coinGain || q.xpGain)) {
+        if (q.coinGain) {
+          save.profile.coins = (Number(save.profile.coins) || 0) + q.coinGain;
+          if (save.stats) save.stats.coinsEarned = (Number(save.stats.coinsEarned) || 0) + q.coinGain;
+        }
+        if (q.xpGain) {
+          save.profile.xp = (Number(save.profile.xp) || 0) + q.xpGain;
+          save.profile.totalXp = (Number(save.profile.totalXp) || 0) + q.xpGain;
+          WQ.level.applyLevelUps(save.profile);
+        }
+      }
+      WQ.quest.resetPending();
+    }
+
+    /* v0.2 错题本重练：可以把选词范围收窄到指定词 / 只收窄到「冷却已到」的词 */
+    let wordIds = Array.isArray(o.wordIds) ? o.wordIds.slice() : null;
+    if (o.reclaimOnly) {
+      const ready = Object.keys(save.progress || {}).filter(function (id) {
+        const p = save.progress[id];
+        return !!p && WQ.save.reclaimState(p, now).can;
+      });
+      wordIds = wordIds ? wordIds.filter(function (id) { return ready.indexOf(id) >= 0; }) : ready;
+    }
+    if (wordIds && !wordIds.length) return null;
+
     const round = WQ.questionPool.buildRound({
       save: save,
       words: words,
       source: source,
+      wordIds: wordIds,
       now: now,
       rnd: rnd,
       ttsAvailable: ttsAvailable
@@ -54,6 +85,9 @@
     const session = {
       roundId: U.uid(),
       source: source,
+      aborted: false,
+      /* v0.2：本局是否是错题本重练（用于音效与徽章 B13「重练答对」） */
+      reclaim: source === 'wrongBook',
       questions: round.questions,
       totalQuestions: round.totalQuestions,
       index: 0,
@@ -68,8 +102,8 @@
       coinsGained: 0,
       comboTiersHit: [],
       retryUsed: false,
-      strawDoubleAvailable: !!(save.strawDoubleArmed || save.pendingStrawDouble),
-      scoutEyeRemaining: Math.max(0, Number(save.pendingScoutEye) || 0),
+      strawDoubleAvailable: !!(save.profile.pendingStrawDouble || save.pendingStrawDouble),
+      scoutEyeRemaining: Math.max(0, Number(save.profile.pendingScoutEye) || Number(save.pendingScoutEye) || 0),
       scoutEyeUsed: 0,
       isFirstRoundToday: !save.daily.todayFirstRoundDone,
       startedAt: now.toISOString(),
@@ -87,8 +121,8 @@
 
     /* 购买的道具在开局消耗（nextRoundHpBonus 复位；侦查之眼/稻草人保持"本局有效"） */
     if (hpBonus) save.profile.nextRoundHpBonus = 0;
-    if (session.strawDoubleAvailable) save.pendingStrawDouble = false;
-    if (session.scoutEyeRemaining) save.pendingScoutEye = 0;
+    if (session.strawDoubleAvailable) save.profile.pendingStrawDouble = false;
+    if (session.scoutEyeRemaining) save.profile.pendingScoutEye = 0;
 
     state.session = session;
     state.ui.exampleOpen = false;
@@ -226,7 +260,11 @@
       hpAfter: s.hpLeft
     });
 
-    WQ.actions.commit(); // 判定后立即落库（docs/04 R4 对策①）
+    /* 判定后立即落库：存档 + 完整会话快照（刷新/崩溃后可补结算，修 D1）。
+       注意：每日任务的进度不在这里逐题推进 —— 它在结算时从 stats.daily 统一重建（见 game/quest.js），
+       这样"逐题加一次 + 结算再加一次"的双重记账在结构上就不可能发生。 */
+    WQ.actions.commit();
+    persistSession(s);
     return res;
   }
 
@@ -255,11 +293,13 @@
     s.pendingWrongIds = snap.pendingWrongIds.slice();
     /* hpLeft 保持当前值（不清零、不回满）：血量归零时由替身稻草人机制处理 */
 
-    const q = s.questions[s.index];
-    if (q) {
-      /* 回滚词进度：恢复作答前快照，没有快照则删除本局新增的进度 */
-      if (snap.progress) s.progressMap[q.wordId] = U.deepClone(snap.progress);
-      else delete s.progressMap[q.wordId];
+    /* 回滚词进度：恢复作答前快照，没有快照则删除本局新增的进度 */
+    const retryQ = s.questions[s.index] || null;
+    if (retryQ) {
+      if (snap.progress) s.progressMap[retryQ.wordId] = U.deepClone(snap.progress);
+      else delete s.progressMap[retryQ.wordId];
+      /* 重试后这次作答要重新以**本局快照**为基准累加，而不是再读一遍存档（否则会重复计一次） */
+      if (s.progressAnswered) delete s.progressAnswered[retryQ.wordId];
     }
     if (s.log[s.index]) s.log[s.index] = null;
 
@@ -305,6 +345,49 @@
   }
 
   /**
+   * 把当前会话完整落盘（D1）。
+   * 只去掉纯 UI 临时字段；题目与进度都要保留，刷新后才能真正补结算。
+   * 写入失败只影响"崩溃恢复"这一项，绝不影响正常流程（persist.saveSession 内部已 try/catch）。
+   */
+  function persistSession(session) {
+    const s = session || WQ.state.session;
+    if (!s) return false;
+    try {
+      return WQ.persist.saveSession({
+        roundId: s.roundId,
+        source: s.source,
+        aborted: false,
+        questions: s.questions,
+        totalQuestions: s.totalQuestions,
+        index: s.index,
+        hpMax: s.hpMax,
+        hpLeft: s.hpLeft,
+        combo: s.combo,
+        maxCombo: s.maxCombo,
+        correct: s.correct,
+        wrong: s.wrong,
+        skipped: s.skipped,
+        xpGained: s.xpGained,
+        coinsGained: s.coinsGained,
+        comboTiersHit: s.comboTiersHit,
+        retryUsed: s.retryUsed,
+        strawDoubleAvailable: s.strawDoubleAvailable,
+        strawDoubleUsed: s.strawDoubleUsed,
+        scoutEyeRemaining: s.scoutEyeRemaining,
+        scoutEyeUsed: s.scoutEyeUsed,
+        isFirstRoundToday: s.isFirstRoundToday,
+        startedAt: s.startedAt,
+        startedDate: s.startedDate,
+        pendingWrongIds: s.pendingWrongIds,
+        progressMap: s.progressMap,
+        byTypeLog: s.byTypeLog,
+        breakdown: s.breakdown,
+        log: s.log
+      });
+    } catch (e) { return false; }
+  }
+
+  /**
    * 结算落库（幂等）。可重复调用，第二次不会重复发奖。
    * @returns {object|null} 结算结果
    */
@@ -322,17 +405,84 @@
     return res;
   }
 
-  /** 本局中断（刷新/退出）：保留已得 XP 与金币，清掉会话 */
+  /**
+   * 本局中断（刷新 / 点「✕ 退出」）：保留已得 XP / 金币 / 词进度，清掉会话。
+   *
+   * v0.2（修 D2）：中断局一定带 aborted 标记 —— 保留收益，但不算完成局、
+   * 不写 daily.todayFirstRoundDone、不进 stats.totalRounds、不解锁"完成类"徽章。
+   */
   function abortSession(keepNotice) {
     const s = WQ.state.session;
     if (s) {
-      /* 中断的中途局也要把已经判定的题落库（"已获得 XP 与金币已保留"） */
+      s.aborted = true;
       WQ.game.applyRoundEnd(WQ.state.save, s, new Date());
+      WQ.log.add('roundAbort', {
+        roundId: s.roundId,
+        answered: (Number(s.correct) || 0) + (Number(s.wrong) || 0) + (Number(s.skipped) || 0),
+        total: s.totalQuestions,
+        xpGained: Number(s.xpGained) || 0
+      });
     }
     WQ.state.session = null;
     WQ.persist.clearSession();
     if (keepNotice) WQ.state.ui.interruptNotice = true;
     WQ.actions.commit();
+  }
+
+  /**
+   * 启动时恢复上一次中断的对局（D1 的核心修复）。
+   *
+   * 刷新 / 崩溃 / 关标签页后，localStorage 里留着完整会话快照；
+   * 这里把它读回来补一次 applyRoundEnd：本局已得的 XP、金币、词级进度、stats 聚合、
+   * daily 聚合、任务进度与宝箱碎片全部进账，然后清掉会话键。
+   *
+   * 幂等性：applyRoundEnd 以 roundId 为幂等键，因此即使上一次其实已经结算成功
+   * （例如在结算与 clearSession 之间崩溃），这里也只会返回 applied:false，不会重复发奖。
+   *
+   * @returns {{recovered:boolean, xp:number, coins:number, roundId?:string, reason?:string}}
+   */
+  function recoverSession(now) {
+    const out = { recovered: false, xp: 0, coins: 0 };
+    if (!WQ.persist || !WQ.persist.loadSession) return out;
+    let snap = null;
+    try { snap = WQ.persist.loadSession(); } catch (e) { snap = null; }
+    if (!snap) return out;
+
+    const nowDate = now instanceof Date ? now : new Date();
+    const save = WQ.state.save;
+    /* 已存在同 roundId 的结算记录 → 上次其实结算成功，只清会话键 */
+    const existed = (save.rounds || []).some(function (r) { return r && r.roundId === snap.roundId; });
+    if (existed) {
+      WQ.persist.clearSession();
+      out.reason = 'alreadySettled';
+      return out;
+    }
+
+    snap.aborted = true;    // 未打完的局：保留收益但不计完成局（D2 口径）
+    snap.log = Array.isArray(snap.log) ? snap.log.filter(Boolean) : [];
+    snap.progressMap = snap.progressMap || Object.create(null);
+    snap.byTypeLog = snap.byTypeLog || emptyByType();
+    snap.breakdown = Array.isArray(snap.breakdown) ? snap.breakdown : [];
+
+    const beforeCoins = Number(save.profile.coins) || 0;
+    const res = WQ.game.applyRoundEnd(save, snap, nowDate);
+    WQ.persist.clearSession();
+    WQ.actions.commit();
+
+    out.recovered = true;
+    out.roundId = snap.roundId;
+    out.xp = (res && res.roundRecord && Number(res.roundRecord.xpGained)) || 0;
+    out.coins = (Number(save.profile.coins) || 0) - beforeCoins;
+    out.applied = !!(res && res.applied);
+    WQ.log.add('sessionRecovered', {
+      roundId: snap.roundId,
+      xp: out.xp,
+      coins: out.coins,
+      answered: (Number(snap.correct) || 0) + (Number(snap.wrong) || 0) + (Number(snap.skipped) || 0),
+      total: Number(snap.totalQuestions) || 0,
+      applied: out.applied
+    });
+    return out;
   }
 
   WQ.flow = {
@@ -345,6 +495,8 @@
     isRoundOver: isRoundOver,
     finishSession: finishSession,
     abortSession: abortSession,
+    persistSession: persistSession,
+    recoverSession: recoverSession,
     emptyByType: emptyByType
   };
 })(window.WQ = window.WQ || {});

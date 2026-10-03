@@ -31,6 +31,9 @@
     const host = root();
     if (!host) return;
     lastFocus = document.activeElement;
+    /* 打开时刻：用来吃掉「打开的那一次用户手势本身」——浏览器在 click 之后还会补一个 Enter，
+       若不挡住，玩家点开宝箱的同一瞬间就会被这声 Enter 关掉（奖励看不见）。 */
+    const openedAt = Date.now();
 
     host.innerHTML = '<div class="overlay" data-overlay-backdrop>' + html + '</div>';
     const backdrop = host.firstChild;
@@ -61,9 +64,10 @@
     };
     document.addEventListener('keydown', trapHandler, true);
 
-    /* Esc / Enter 关闭 */
+    /* Esc / Enter 关闭（打开后 300ms 内忽略 Enter：那是上一次手势的余波） */
     closeHandler = function (evt) {
       if (evt.key === 'Escape' || (o.closeOnEnter !== false && evt.key === 'Enter')) {
+        if (evt.key === 'Enter' && (Date.now() - openedAt) < 300) return;
         evt.preventDefault();
         close();
       }
@@ -174,12 +178,81 @@
     if (rootEl) observer.observe(rootEl, { childList: true });
   }
 
+  /**
+   * v0.2 开箱结果覆盖层。
+   * 档位用三个通道同时表达（颜色 + 边框粗细 + 档位文字），不依赖单一颜色区分。
+   * @param {object} res { tier:{id,name,icon,coins,xp}, coins, xp }
+   * @param {function} [onDone] 关闭后回调（用于排队播放徽章解锁）
+   */
+  function chestResult(res, onDone) {
+    const r = res || {};
+    const tier = r.tier || { id: 1, name: '普通', icon: '📦', coins: 0, xp: 0 };
+    const id = Math.max(1, Math.min(3, Number(tier.id) || 1));
+    const html = [
+      '<div class="overlay-card chest-result chest-rarity-' + id + '" role="dialog" aria-modal="true" aria-label="宝箱奖励">',
+      '  <div class="chest-result-icon" aria-hidden="true">' + U.esc(tier.icon || '📦') + '</div>',
+      '  <p class="overlay-title">' + U.esc(tier.name) + '宝箱</p>',
+      '  <div class="chest-result-main">',
+      '    <div class="reward-row"><span>金币</span><span class="val mono">+' + U.esc(r.coins == null ? tier.coins : r.coins) + '</span></div>',
+      '    <div class="reward-row"><span>经验</span><span class="val mono">+' + U.esc(r.xp == null ? tier.xp : r.xp) + ' XP</span></div>',
+      '  </div>',
+      '  <p class="overlay-text">点任意处继续（或按 Enter / Esc）</p>',
+      '</div>'
+    ].join('');
+    if (WQ.audio && WQ.audio.sfxCoin) WQ.audio.sfxCoin();
+    /* autoClose 给足 12s：正常玩家早就点掉了，而**测试用的虚拟时钟**会一次性推进好几秒，
+       3.2s 会让"刚打开就被自动关掉"在自动化里成为假失败（真实浏览器里也确实太快）。 */
+    open(html, { onClickAnywhere: true, dismissible: true, autoClose: 12000, onClose: null });
+    /* onDone 只跑一次（覆盖层被任何方式关闭后） */
+    const rootEl = document.getElementById('overlay-root');
+    if (!rootEl) { if (onDone) onDone(); return; }
+    const observer = new MutationObserver(function () {
+      if (!isOpen()) {
+        observer.disconnect();
+        if (onDone) onDone();
+      }
+    });
+    observer.observe(rootEl, { childList: true });
+  }
+
+  /**
+   * v0.2 徽章详情弹层（验收报告 D8）。
+   * @param {object} a WQ.ach.getAllProgress 的单条 { def, progress, target, text, unlocked, unlockedAt }
+   */
+  function badgeDetail(a) {
+    if (!a || !a.def) return;
+    const def = a.def;
+    const unlocked = !!a.unlocked;
+    const pct = a.target ? Math.round(Math.max(0, Math.min(1, a.progress / a.target)) * 100) : 0;
+    const when = a.unlockedAt ? String(a.unlockedAt).slice(0, 10) : '';
+    const html = [
+      '<div class="overlay-card badge-detail" role="dialog" aria-modal="true" aria-labelledby="ov-badge-title">',
+      '  <div class="badge-detail-icon" aria-hidden="true">' + U.esc(unlocked ? def.icon : '🔒') + '</div>',
+      '  <h2 class="overlay-title" id="ov-badge-title">' + U.esc(def.name) + '</h2>',
+      '  <p class="overlay-text">' + U.esc(def.desc) + '</p>',
+      '  <div class="progress" style="margin-top:12px"><i style="transform:scaleX(' + (pct / 100) + ')"></i></div>',
+      '  <p class="overlay-text mono">' + U.esc(a.text || (a.progress + '/' + a.target)) + '</p>',
+      '  <p class="overlay-text">' + (unlocked ? '已于 ' + U.esc(when) + ' 解锁' : '尚未解锁') + '</p>',
+      unlocked ? '' : '<p class="overlay-text">奖励：🪙 ' + U.esc(def.coinReward || 0) + (def.xpReward ? ' · +' + U.esc(def.xpReward) + ' XP' : '') + '</p>',
+      '  <div class="overlay-actions">',
+      '    <button class="btn btn-primary" type="button" data-overlay-close>知道了</button>',
+      '  </div>',
+      '</div>'
+    ].join('');
+    const backdrop = open(html, { dismissible: true });
+    if (!backdrop) return;
+    const btn = backdrop.querySelector('[data-overlay-close]');
+    if (btn) btn.addEventListener('click', function () { close(); });
+  }
+
   WQ.overlay = {
     open: open,
     close: close,
     isOpen: isOpen,
     confirm: confirm,
     levelUp: levelUp,
-    badgeUnlock: badgeUnlock
+    badgeUnlock: badgeUnlock,
+    chestResult: chestResult,
+    badgeDetail: badgeDetail
   };
 })(window.WQ = window.WQ || {});

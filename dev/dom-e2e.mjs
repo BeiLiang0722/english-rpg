@@ -6,6 +6,9 @@
  *       执行，然后模拟用户点击/按键，逐步核对"点了什么 → 界面变成什么"；用重建 vm 上下文
  *       的方式模拟刷新，验证 localStorage 持久化与结算幂等。虚拟时钟让测试不需要真等待。
  * 局限：不做 CSS 布局与绘制（见 docs/05 的已知限制）。
+ * 第 21–24 节（v0.1.1 新增，修 docs/06 §1.3 的"三套件看不见写盘失败"）使用 domshim 的故障注入：
+ *   21 注入 QuotaExceededError → 营地提示条 + 主按钮仍可用；22 配额只抛一次 → rounds 裁剪重试成功；
+ *   23 emitStorageEvent → persist.onStorage → storageExternal 转发；24 损坏存档路径不受注入影响。
  */
 import fs from 'node:fs';
 import vm from 'node:vm';
@@ -16,19 +19,17 @@ import { createEnv } from './domshim.mjs';
 const DEV_DIR = path.dirname(fileURLToPath(import.meta.url));
 const APP = path.resolve(DEV_DIR, '..', 'app');
 
-/* 与 app/index.html 的 <script> 顺序保持一致 */
-const FILES = [
-  'src/config/balance.js', 'src/config/questions.js', 'src/config/achievements.js', 'src/data/words.js',
-  'src/core/util.js', 'src/core/bus.js', 'src/store/log.js', 'src/core/audio.js', 'src/core/router.js',
-  'src/store/save.js', 'src/store/persist.js', 'src/store/state.js',
-  'src/game/level.js', 'src/game/srs.js', 'src/game/streak.js', 'src/game/questionEngine.js',
-  'src/game/questionPool.js', 'src/game/achievements.js', 'src/game/shop.js', 'src/game/balance.js',
-  'src/game/flow.js',
-  'src/ui/toast.js', 'src/ui/overlay.js', 'src/ui/anim.js', 'src/ui/shell.js', 'src/ui/selfcheck.js',
-  'src/ui/pages/boot.js', 'src/ui/pages/home.js', 'src/ui/pages/battle.js', 'src/ui/pages/result.js',
-  'src/ui/pages/growth.js', 'src/ui/pages/shop.js', 'src/ui/pages/settings.js', 'src/ui/pages/selfcheck.js',
-  'src/main.js'
-];
+/* 与 app/index.html 的 <script src> 顺序保持一致 —— 唯一真相同步（v0.2 起 app 会持续新增模块，
+ * 硬编码清单一旦漏文件，就会出现「WQ.quest is undefined」这类与断言无关的连锁失败）。 */
+function listScriptsFromIndexHtml() {
+  const html = fs.readFileSync(path.join(APP, 'index.html'), 'utf8');
+  const out = [];
+  const re = /<script\s+src="([^"]+)"\s*>/g;
+  let m;
+  while ((m = re.exec(html)) !== null) out.push(m[1].replace(/\\/g, '/'));
+  return out;
+}
+const FILES = listScriptsFromIndexHtml();
 const sources = new Map();
 for (const rel of FILES) sources.set(rel, fs.readFileSync(path.join(APP, rel), 'utf8'));
 const mainSource = sources.get('src/main.js');
@@ -279,22 +280,42 @@ log('RoundRecord', JSON.stringify({ correct: rec.correct, total: rec.totalQuesti
 log('结算页数字与存档一致（XP +' + rec.xpGained + '）', rText.replace(/\s+/g, ' ').includes('+' + rec.xpGained), true);
 log('log 长度 === 题数', rec.log.length + '/' + rec.totalQuestions, rec.log.length === rec.totalQuestions);
 log('本局金币落在 0–71（docs/03 §5.3 口径）', String(rec.coinsGained), rec.coinsGained >= 0 && rec.coinsGained <= 71);
-const bodyXp = (rec.breakdown || []).filter((b) => b.unit === 'xp' && b.key !== 'badgeXp').reduce((a, b) => a + b.value, 0);
-log('本局 XP 明细', (rec.breakdown || []).map((b) => b.label + ' ' + b.value + b.unit).join(' + ') || '（空）');
-/* 上限构造：按实际题型分布算出的理论上限（docs/03 §5.1 的 215 是"8 题全 Q3/Q5 + 全对 + 全为新词"的特例） */
+/* 明细 vs 口径对账（v0.2）：
+   breakdown 是**本局全部**奖励行（对局本体 + 完美/每日首局 + 徽章 + 升级 + 每日任务），
+   所以「逐行相加」应等于 roundRecord 的三个单列字段之和（xpGained 只含对局本体）。
+   注：badgeXp 这一行本身就是徽章 XP 明细（= bonusXp），没有第二个来源，不需要排除。 */
+const detailXp = (rec.breakdown || []).filter((b) => b.unit === 'xp').reduce((a, b) => a + b.value, 0);
+const detailCoin = (rec.breakdown || []).filter((b) => b.unit === 'coin').reduce((a, b) => a + b.value, 0);
+/* 对局本体 XP（不含每日任务 XP）：用来和「按题型分布 + 实际新词数」的理论上限比对 */
+const bodyXp = rec.xpGained;
+log('本局 XP 明细', (rec.breakdown || []).map((b) => b.key + '=' + b.value + b.unit).join(' + ') || '（空）');
+log('XP 明细逐行相加 === 本体 + 徽章 + 任务', '明细 ' + detailXp + ' / 口径 ' + (rec.xpGained + rec.bonusXp + (rec.questXp || 0)),
+  detailXp === rec.xpGained + rec.bonusXp + (rec.questXp || 0));
+/* 上限构造：按实际题型分布算出的理论上限（docs/03 §5.1 的 215 是"8 题全 Q3/Q5 + 全对 + 全为新词"的特例）。
+   v0.2 修正：新词首答 / 击败新词按**本局实际的新词数**算 —— 经查证，v0.1 的
+   `applyAnswer` 以每局重置的 session.progressMap 为基准，使 seenCount 恒为 0，
+   于是"每局每词都算新词"。修复后同一词只在真正第一次出现时拿 +5/+5，所以这里必须按实际词数封顶。 */
+const newWordCount = new Set((rec.log || []).map((l) => l.wordId)).size;
 const typeMax = (rec.log || []).reduce((a, l) => {
   const base = l.type === 'Q3' || l.type === 'Q5' ? 15 : (l.type === 'Q4' ? 12 : 10);
   return a + base;
-}, 0) + 8 * 5 + 8 * 5 + 35 + 20 + 30;
+}, 0) + newWordCount * 5 + newWordCount * 5 + 35 + 20 + 30;
 const special215 = (rec.log || []).every((l) => l.type === 'Q3' || l.type === 'Q5');
-log('本局对局本体 XP 落在 10–' + typeMax + '（按本局题型分布的理论上限）', String(bodyXp), bodyXp >= 10 && bodyXp <= typeMax);
+log('本局对局本体 XP 落在 10–' + typeMax + '（按本局题型分布 + 实际新词数）', String(bodyXp), bodyXp >= 10 && bodyXp <= typeMax);
 if (special215) log('本题型组合命中 docs/03 §5.1 的 215 构造成例', String(bodyXp), bodyXp === 215);
-log('本局对局本体 XP 与实际作答相符', '每答对 +基础分(≥10) → 上限 ' + (rec.correct * 15 + 8 * 5 + 8 * 5 + 35 + 20 + 30) + '，实际 ' + bodyXp,
-  bodyXp <= rec.correct * 15 + 8 * 5 + 8 * 5 + 35 + 20 + 30);
-log('本局总入账 = 本体 + 徽章 + 升级', 'xp ' + rec.xpGained + '+' + rec.bonusXp + ' / 金币 ' + rec.coinsGained + '+' + rec.bonusCoins,
-  typeof rec.bonusXp === 'number' && typeof rec.bonusCoins === 'number');
-log('结算页合计 = 总入账', '+XP ' + (rec.xpGained + rec.bonusXp) + ' · 金币 ' + (rec.coinsGained + rec.bonusCoins),
-  rText.replace(/\s+/g, ' ').includes('+' + (rec.xpGained + rec.bonusXp) + ' XP') && rText.replace(/\s+/g, ' ').includes('+' + (rec.coinsGained + rec.bonusCoins) + ' 金币'));
+log('本局对局本体 XP 与实际作答相符', '每答对 +基础分(≥10) → 上限 ' + (rec.correct * 15 + newWordCount * 5 + newWordCount * 5 + 35 + 20 + 30) + '，实际 ' + bodyXp,
+  bodyXp <= rec.correct * 15 + newWordCount * 5 + newWordCount * 5 + 35 + 20 + 30);
+log('本局总入账 = 本体 + 徽章 + 升级 + 任务', 'xp ' + rec.xpGained + '+' + rec.bonusXp + '+' + (rec.questXp || 0) + ' / 金币 ' + rec.coinsGained + '+' + rec.bonusCoins + '+' + (rec.questCoins || 0),
+  typeof rec.bonusXp === 'number' && typeof rec.bonusCoins === 'number' && typeof rec.questXp === 'number' && typeof rec.questCoins === 'number');
+/* 结算页顶部合计必须等于「明细行逐行相加」（v0.2 起明细多了"每日任务经验/每日任务"两行） */
+const totalXp = rec.xpGained + rec.bonusXp + (rec.questXp || 0);
+/* 金币口径：profile.coins 的增量 = 本体金币 + 全部明细行（徽章/升级/任务都在明细里），
+   所以「明细逐行 + 本体」就等于本局总入账 —— 这条断言正是那个"金币重复入账"脏账的守护者。 */
+const totalCoins = rec.coinsGained + detailCoin;
+log('结算页合计 = 总入账', '+XP ' + totalXp + ' · 金币 ' + totalCoins,
+  rText.replace(/\s+/g, ' ').includes('+' + totalXp + ' XP') && rText.replace(/\s+/g, ' ').includes('+' + totalCoins + ' 金币'));
+log('金币明细逐行相加 === 档内金币增量', '明细 ' + detailCoin + ' + 本体 ' + rec.coinsGained,
+  totalCoins === rec.coinsGained + detailCoin);
 
 /* ---------- 7. 持久化：刷新后进度还在 ---------- */
 const snap = (p) => JSON.stringify({
@@ -369,7 +390,8 @@ for (const [tab, kw] of [['level', '徽章墙'], ['wrong', '错题本|待复活'
   log('成长页 tab=' + tab, t.split('\n').filter(Boolean).slice(0, 5).join(' | '), new RegExp(kw).test(t));
 }
 go('#/growth?tab=level');
-log('徽章墙恰好 11 格', String(WQ.ach.getAllProgress(WQ.state.save).length), WQ.ach.getAllProgress(WQ.state.save).length === 11);
+log('徽章墙格数 === 徽章定义数', String(WQ.ach.getAllProgress(WQ.state.save).length),
+  WQ.ach.getAllProgress(WQ.state.save).length === WQ.achievements.length);
 
 /* ---------- 12. 商店购买 → 下一局 4 颗心 ---------- */
 go('#/home');
@@ -523,15 +545,428 @@ log('损坏后不白屏，仍进营地', page.env.window.location.hash + ' / lev
       dispatch('Enter', input); // 等价于焦点在输入框里按 Enter 提交
     }
     p.pump(200);
-    if (!s.judged) { ok = false; break; }
+    if (!s.judged) {
+      /* 调试信息：键盘没判定成功时把现场打出来（便于定位是按键路径还是渲染路径的问题） */
+      console.log('  [键盘调试] 第 ' + (i + 1) + ' 次按键 key=' + (idx >= 0 ? String(idx + 1) : 'Enter') +
+        ' 题型=' + cur.type + ' judged=' + s.judged + ' 监听器=' + keyListeners +
+        ' 反馈=' + (p.doc.querySelector('.feedback') ? p.doc.querySelector('.feedback').innerText.replace(/\s+/g, ' ') : '（无）'));
+      ok = false;
+      break;
+    }
     judgedCount++;
   }
   log('纯键盘走完一局（数字键作答 + Enter 下一题）', '判定 ' + judgedCount + ' 题 / 监听器 ' + keyListeners + ' / 结束路由 ' + p.env.window.location.hash,
     ok && judgedCount >= 8 && p.env.window.location.hash.indexOf('#/result/') >= 0);
 }
 
+/* ================= v0.2 新增机制与三项 P0 修复的端到端断言 ================= */
+
+/* ---------- 19b. 每日任务卡 + 随机宝箱卡（docs/03 §5.9） ---------- */
+{
+  const p = createPage(new Map());
+  p.pump(1200);
+  const body = p.doc.getElementById('app').innerText.replace(/\s+/g, ' ');
+  p.WQ.router.go('#/home');
+  p.pump(300);
+  const homeText = p.doc.getElementById('app').innerText.replace(/\s+/g, ' ');
+  const rows = p.doc.querySelectorAll('.quest-row');
+  const d = p.WQ.state.save.daily;
+  log('营地渲染每日任务卡（3 条 + 进度条 + 奖励）',
+    '行数=' + rows.length + ' / 清单=' + (d.questIds || []).join(',') + ' / 含每日任务=' + /每日任务/.test(homeText),
+    rows.length === 3 && (d.questIds || []).length === 3 && /每日任务/.test(homeText)
+      && p.doc.querySelectorAll('.quest-progress-fill').length >= 3);
+  log('每日任务进度以今日 counters 为准（开局前为 0）',
+    'answered=' + d.counters.answered + ' / correct=' + d.counters.correct,
+    d.counters.answered === 0 && d.counters.correct === 0);
+  const chestCard = p.doc.querySelector('.chest-card');
+  const shards = p.doc.querySelectorAll('.chest-card .shard');
+  log('营地渲染随机宝箱卡（3 枚碎片槽 + 开箱按钮）',
+    '卡片=' + !!chestCard + ' / 碎片槽=' + shards.length + ' / 含随机宝箱=' + /随机宝箱/.test(homeText),
+    !!chestCard && shards.length === 3 && /随机宝箱/.test(homeText) && !!p.doc.querySelector('.chest-open-btn'));
+  log('碎片不足时开箱按钮禁用', 'disabled=' + p.doc.querySelector('.chest-open-btn').disabled,
+    p.doc.querySelector('.chest-open-btn').disabled === true);
+}
+
+/* ---------- 19c. 开箱：档位奖励 + 当日只能开一次 ---------- */
+{
+  const p = createPage(new Map());
+  p.pump(1200);
+  const before = p.WQ.state.save.profile.coins;
+  const totalXpBefore = p.WQ.state.save.profile.totalXp;
+  p.WQ.actions.commit((s) => { s.save.daily.chestShards = 3; });
+  p.WQ.router.go('#/home');
+  p.pump(300);
+  const btn = p.doc.querySelector('[data-action="openChest"]');
+  const enabled = !!btn && btn.disabled !== true;
+  btn.click();
+  p.pump(400);
+  const after = p.WQ.state.save.profile.coins;
+  const gained = after - before;
+  const xpGained = p.WQ.state.save.profile.totalXp - totalXpBefore;
+  const overlay = p.doc.getElementById('overlay-root').innerText.replace(/\s+/g, ' ');
+  const hist = p.WQ.state.save.daily.chestHistory || [];
+  log('开箱：扣 3 枚碎片、按档位发金币与 XP、弹结果覆盖层',
+    '按钮可用=' + enabled + ' / 金币+' + gained + ' / XP+' + xpGained + ' / 档位=' + (hist.length ? hist[hist.length - 1].tier : '-')
+      + ' / isOpen=' + p.WQ.overlay.isOpen() + ' / overlayText=' + overlay.slice(0, 50),
+    enabled && gained >= 25 && gained <= 70 && xpGained >= 10 && xpGained <= 35
+      && p.WQ.state.save.daily.chestShards === 0 && p.WQ.state.save.profile.chestOpenedTotal === 1 && /宝箱/.test(overlay));
+  p.WQ.overlay.close();
+  /* 同日再开：必须被拒绝（chestOpenDate 幂等） */
+  p.WQ.actions.commit((s) => { s.save.daily.chestShards = 3; });
+  const second = p.WQ.chest.open(p.WQ.state.save, new Date());
+  log('同日第二次开箱被拒绝（幂等）', 'ok=' + second.ok + ' reason=' + second.reason,
+    second.ok === false && second.reason === 'openedToday');
+}
+
+/* ---------- 19d. 三项 P0 修复：D2 中断局不算完成局、D1 刷新补结算、D3 多标签不覆盖 ---------- */
+
+/* D2：点「✕ 退出」后不能再吃掉当天的每日首局 */
+{
+  const st = new Map();
+  const p = createPage(st);
+  p.pump(1200);
+  p.doc.querySelector('[data-action="start"]').click();
+  p.pump(300);
+  const firstRoundBefore = p.WQ.state.save.daily.todayFirstRoundDone;
+  const roundsBefore = p.WQ.state.save.stats.totalRounds;
+  const coinsBefore = p.WQ.state.save.profile.coins;
+  /* 只答第 1 题（答对），然后走「退出本局」的确认弹层 */
+  const q = p.WQ.flow.currentQuestion();
+  const ci = (q.options || []).findIndex((o) => o.correct);
+  if (ci >= 0) p.doc.querySelectorAll('.option')[ci].click();
+  else {
+    const input = p.doc.querySelector('[data-spell-input]');
+    input.value = q.word;
+    p.doc.querySelector('[data-action="submitSpell"]').click();
+  }
+  p.pump(300);
+  const xpBeforeExit = p.WQ.state.save.profile.totalXp;
+  p.doc.querySelector('[data-action="exit"]').click();
+  p.pump(200);
+  p.doc.querySelector('[data-overlay-ok]').click();
+  p.pump(400);
+  const s = p.WQ.state.save;
+  log('D2 中途退出：保留已得收益、不写每日首局标志、不计完成局数',
+    'firstRoundDone ' + firstRoundBefore + '→' + s.daily.todayFirstRoundDone + ' / totalRounds ' + roundsBefore + '→' + s.stats.totalRounds
+      + ' / XP+' + (s.profile.totalXp - xpBeforeExit) + ' / 金币+' + (s.profile.coins - coinsBefore),
+    firstRoundBefore === false && s.daily.todayFirstRoundDone === false
+      && s.stats.totalRounds === roundsBefore && s.profile.totalXp > xpBeforeExit);
+}
+
+/* D1：对局中刷新 → 已得 XP / 金币 / 词进度全部进账（不再是只弹一句提示） */
+{
+  const st = new Map();
+  const p1 = createPage(st);
+  p1.pump(1200);
+  p1.doc.querySelector('[data-action="start"]').click();
+  p1.pump(300);
+  const q = p1.WQ.flow.currentQuestion();
+  const ci = (q.options || []).findIndex((o) => o.correct);
+  if (ci >= 0) p1.doc.querySelectorAll('.option')[ci].click();
+  else {
+    const input = p1.doc.querySelector('[data-action="spell-input"], [data-spell-input]');
+    input.value = q.word;
+    p1.doc.querySelector('[data-action="submitSpell"]').click();
+  }
+  p1.pump(300);
+  const xpMid = p1.WQ.state.save.profile.totalXp;
+  const sessionXp = p1.WQ.state.session ? p1.WQ.state.session.xpGained : 0;
+  const progressMid = Object.keys(p1.WQ.state.save.progress).length;
+  const sessionKeyWritten = !!st.get('wordquest.session.v1');
+  const p2 = createPage(st);       // 等价刷新：同一份 localStorage
+  p2.pump(1200);
+  const s2 = p2.WQ.state.save;
+  const roundsWithRound = s2.rounds.length;
+  log('D1 对局中刷新：会话快照已落盘 + 刷新后补结算（XP/金币/词进度全部进账）',
+    '会话键=' + sessionKeyWritten + ' / 内存本局 XP=' + sessionXp + ' / 刷新后 XP=' + s2.profile.totalXp
+      + '（刷新前 ' + xpMid + '）/ rounds=' + roundsWithRound + ' / 词进度 ' + progressMid + '→' + Object.keys(s2.progress).length,
+    sessionKeyWritten && sessionXp > 0 && s2.profile.totalXp >= xpMid + sessionXp
+      && roundsWithRound >= 1 && Object.keys(s2.progress).length >= progressMid && !st.get('wordquest.session.v1'));
+  const recoveredToHome = p2.env.window.location.hash === '#/home';
+  log('D1 刷新后停在营地（不会卡在对局页）', p2.env.window.location.hash, recoveredToHome);
+}
+
+/* D3：B 标签页写盘时不能覆盖 A 标签页已经落库的进度 */
+{
+  const stAB = new Map();
+  const pA = createPage(stAB);
+  pA.pump(1200);
+  const b = createPage(stAB);      // B 与 A 共享同一份 localStorage
+  b.pump(1200);
+  const baseline = JSON.parse(stAB.get('wordquest.save.v1'));
+  const baselineSign = JSON.stringify([baseline.profile.level, baseline.profile.xp, baseline.profile.coins, (baseline.rounds || []).length]);
+  /* A 落库（模拟 A 打完一局）：直接写进共享 storage */
+  const aSave = JSON.parse(stAB.get('wordquest.save.v1'));
+  aSave.profile.level = 6;
+  aSave.profile.xp = 42;
+  aSave.profile.coins = 1234;
+  aSave.stats.totalRounds = 5;
+  aSave.stats.totalCorrect = 77;
+  aSave.rounds = [{ roundId: 'round-from-A', endedAt: '2025-01-10T10:00:00.000Z', xpGained: 50, coinsGained: 20 }];
+  stAB.set('wordquest.save.v1', JSON.stringify(aSave));
+  /* B 用内存里的旧档写盘 —— 修复前会把 A 的进度整体覆盖掉 */
+  b.WQ.actions.commit((s) => { s.save.profile.nickname = 'B 玩家'; });
+  const finalSave = JSON.parse(stAB.get('wordquest.save.v1'));
+  const keptA = finalSave.profile.coins === 1234 && finalSave.profile.level === 6
+    && finalSave.rounds.length === 1 && finalSave.rounds[0].roundId === 'round-from-A'
+    && finalSave.stats.totalCorrect === 77;
+  log('D3 多标签：B 写盘时先读盘合并，A 的进度不被覆盖（lost update 已修）',
+    'A 档 sign=' + baselineSign + ' → 合并后 coins=' + finalSave.profile.coins + ' level=' + finalSave.profile.level
+      + ' rounds=' + finalSave.rounds.length + ' totalCorrect=' + finalSave.stats.totalCorrect,
+    keptA);
+}
+
+/* D5 道具：写入 profile 后刷新仍在（v0.1 写在顶层会被白名单丢弃） */
+{
+  const st = new Map();
+  const p1 = createPage(st);
+  p1.pump(1200);
+  p1.WQ.actions.commit((s) => {
+    s.save.profile.pendingScoutEye = 3;
+    s.save.profile.pendingStrawDouble = true;
+  });
+  const p2 = createPage(st);
+  p2.pump(1200);
+  const prof = p2.WQ.state.save.profile;
+  log('D5 待生效道具跨刷新保留（top-level 迁移 + profile 白名单）',
+    'pendingScoutEye=' + prof.pendingScoutEye + ' / pendingStrawDouble=' + prof.pendingStrawDouble,
+    prof.pendingScoutEye === 3 && prof.pendingStrawDouble === true);
+  /* 旧档（道具写在顶层）也必须迁得进来 */
+  const legacy = JSON.parse(st.get('wordquest.save.v1'));
+  delete legacy.profile.pendingScoutEye;
+  delete legacy.profile.pendingStrawDouble;
+  legacy.pendingScoutEye = 2;
+  legacy.pendingStrawDouble = true;
+  st.set('wordquest.save.v1', JSON.stringify(legacy));
+  const p3 = createPage(st);
+  p3.pump(1200);
+  log('D5 旧档顶层字段迁移进 profile',
+    'scoutEye=' + p3.WQ.state.save.profile.pendingScoutEye,
+    p3.WQ.state.save.profile.pendingScoutEye === 2);
+}
+
+/* D6 版本拒绝：高版本存档不加载、不覆盖 */
+{
+  const st = new Map();
+  st.set('wordquest.save.v1', JSON.stringify({ version: 9, profile: { level: 5, coins: 999 }, 未来字段: { a: 1 } }));
+  const p = createPage(st);
+  p.pump(1200);
+  const rawAfter = st.get('wordquest.save.v1');
+  const parsed = JSON.parse(rawAfter);
+  log('D6 高版本存档被拒绝加载：原文保留 + 本次会话不写主键',
+    'level=' + p.WQ.state.save.profile.level + ' / 原 version=' + parsed.version + ' / 未来字段=' + (parsed.未来字段 ? '在' : '丢了')
+      + ' / persistStatus=' + p.WQ.persistStatus,
+    p.WQ.state.save.profile.level === 1 && parsed.version === 9 && !!parsed.未来字段
+      && p.WQ.persist.isLocked() === true && st.get('wordquest.save.v1.bak') !== undefined);
+}
+
+/* D4 侦查之眼：开局真的会排除 1 个错误选项 */
+{
+  const st = new Map();
+  const p = createPage(st);
+  p.pump(1200);
+  p.WQ.actions.commit((s) => { s.save.profile.pendingScoutEye = 3; });
+  p.WQ.router.go('#/home');
+  p.pump(300);
+  p.doc.querySelector('[data-action="start"]').click();
+  p.pump(300);
+  /* 找到第一道选择题（拼写题没有排除概念） */
+  let found = null;
+  for (let i = 0; i < 6 && p.WQ.state.session; i++) {
+    const cur = p.WQ.flow.currentQuestion();
+    if (cur && (cur.options || []).length) { found = cur; break; }
+    p.WQ.flow.answerCurrent({ skip: true });
+    p.WQ.flow.nextQuestion();
+    p.pump(100);
+  }
+  const excluded = p.doc.querySelectorAll('.option.is-excluded');
+  const disabled = p.doc.querySelectorAll('.option[disabled]');
+  const hint = /侦查之眼/.test(p.doc.getElementById('app').innerText);
+  const remaining = p.WQ.state.session ? p.WQ.state.session.scoutEyeRemaining : -1;
+  log('D4 侦查之眼：开局排除 1 个错误选项（置灰 + 不可点 + 提示剩余次数）',
+    '题=' + (found ? found.type : '-') + ' / 排除项=' + excluded.length + ' / 禁用项=' + disabled.length
+      + ' / 剩余额度=' + remaining + ' / 提示=' + hint,
+    !!found && excluded.length === 1 && hint && remaining === 3
+      && (found.options || [])[(found.scoutExcludedIndex == null ? -1 : found.scoutExcludedIndex)]
+      && !found.options[found.scoutExcludedIndex].correct);
+}
+
+/* ---------- 19e. 错题本重练 + 徽章详情弹层 + 结算页「距下一级」（D7/D8/D9） ---------- */
+{
+  const st = new Map();
+  const p = createPage(st);
+  p.pump(1200);
+  const today = p.WQ.util.todayKey();
+  const old = p.WQ.util.addDays(today, -10);
+  const ids = p.WQ.WORDS.slice(0, 2).map((w) => w.id);
+  p.WQ.actions.commit((s) => {
+    s.save.progress[ids[0]] = Object.assign(p.WQ.save.defaultProgress(ids[0]), {
+      wrongCount: 2, lastWrongAt: new Date().toISOString(), seenCount: 3, correctCount: 2
+    });
+    s.save.progress[ids[1]] = Object.assign(p.WQ.save.defaultProgress(ids[1]), {
+      wrongCount: 2, lastWrongAt: new Date(old + 'T10:00:00').toISOString(), seenCount: 2, correctCount: 1
+    });
+  });
+  p.WQ.router.go('#/growth?tab=wrong');
+  p.pump(300);
+  const wrongBody = p.doc.getElementById('app').innerText.replace(/\s+/g, ' ');
+  const rows = p.doc.querySelectorAll('.wrong-item');
+  const badges = p.doc.querySelectorAll('.reclaim-badge');
+  const coolingBadge = Array.from(badges).some((b) => /天后可重练/.test(b.innerText));
+  const readyBadge = Array.from(badges).some((b) => /可重练/.test(b.innerText) && !/天后/.test(b.innerText));
+  const reclaimBtns = p.doc.querySelectorAll('[data-action="reclaimOne"]');
+  const removeBtns = p.doc.querySelectorAll('[data-action="removeWrong"]');
+  log('D7 错题本：按冷却显示「可重练 / N 天后可重练」+ 行内重练/移出按钮',
+    '行=' + rows.length + ' / 徽标=' + badges.length + ' / 冷却文案=' + coolingBadge + ' / 可重练=' + readyBadge
+      + ' / 重练按钮=' + reclaimBtns.length + ' / 移出按钮=' + removeBtns.length + ' / 含说明=' + /冷却/.test(wrongBody),
+    rows.length === 2 && badges.length === 2 && coolingBadge && readyBadge
+      && reclaimBtns.length >= 1 && removeBtns.length === 2);
+  /* 移出：二次确认后 wrongCount=0、lastWrongAt=null，SRS 状态保留 */
+  const correctBefore = p.WQ.state.save.progress[ids[0]].correctCount;
+  removeBtns[0].click();
+  p.pump(200);
+  const okBtn = p.doc.querySelector('[data-overlay-ok]');
+  okBtn.click();
+  p.pump(300);
+  const after = p.WQ.state.save.progress[ids[0]];
+  log('D7 移出错题本：wrongCount=0 / lastWrongAt=null / 保留 SRS 状态',
+    'wrongCount=' + after.wrongCount + ' / lastWrongAt=' + after.lastWrongAt + ' / correctCount=' + after.correctCount + '（原 ' + correctBefore + '）',
+    after.wrongCount === 0 && after.lastWrongAt === null && after.correctCount === correctBefore);
+  /* 重练一个词：开局题数必须 ≤1 且只含该词 */
+  p.WQ.router.go('#/growth?tab=wrong');
+  p.pump(300);
+  const reclaimBtn = p.doc.querySelector('[data-action="reclaimOne"][data-id="' + ids[1] + '"]');
+  reclaimBtn.click();
+  p.pump(400);
+  const sess = p.WQ.state.session;
+  const onlyThatWord = !!sess && sess.questions.every((q) => q.wordId === ids[1]);
+  log('错题本重练：只出这个词的题（wordIds 收窄生效）',
+    '路由=' + p.env.window.location.hash + ' / 题数=' + (sess ? sess.totalQuestions : 0) + ' / 词=' + (sess ? sess.questions.map((q) => q.wordId).join(',') : '-'),
+    onlyThatWord && sess.totalQuestions >= 1 && sess.reclaim === true);
+}
+
+/* 徽章详情弹层（D8） */
+{
+  const p = createPage(new Map());
+  p.pump(1200);
+  p.WQ.router.go('#/growth?tab=level');
+  p.pump(300);
+  const cards = p.doc.querySelectorAll('[data-action="badge"]');
+  const nextTitle = /下一称号/.test(p.doc.getElementById('app').innerText);
+  cards[0].click();
+  p.pump(300);
+  const overlayText = p.doc.getElementById('overlay-root').innerText.replace(/\s+/g, ' ');
+  const hasClose = !!p.doc.querySelector('[data-overlay-close]');
+  const lockedOrUnlocked = /尚未解锁|已于/.test(overlayText);
+  log('D8 徽章详情弹层（Esc / 遮罩关闭 + 焦点归还由 overlay 负责）+ 下一称号预览',
+    '卡片=' + cards.length + ' / 下一称号=' + nextTitle + ' / 弹层=' + overlayText.slice(0, 60) + ' / 关闭按钮=' + hasClose,
+    cards.length > 0 && nextTitle && hasClose && lockedOrUnlocked);
+  p.doc.dispatchEvent({ type: 'keydown', key: 'Escape', target: p.doc.body, preventDefault() {}, stopPropagation() {} });
+  p.pump(200);
+  log('D8 Esc 关闭徽章弹层', p.doc.getElementById('overlay-root').innerText.length === 0,
+    p.doc.getElementById('overlay-root').innerText.length === 0);
+}
+
+/* 结算页「距下一级还差 X XP」（A7 第 5 个数字，D9） */
+{
+  const st = new Map();
+  const p = createPage(st);
+  p.pump(1200);
+  p.doc.querySelector('[data-action="start"]').click();
+  p.pump(300);
+  for (let i = 0; i < 20 && p.WQ.state.session; i++) {
+    const s = p.WQ.state.session;
+    if (s.judged) { p.WQ.flow.nextQuestion(); p.pump(100); continue; }
+    const cur = p.WQ.flow.currentQuestion();
+    const idx = (cur.options || []).findIndex((o) => o.correct);
+    if (idx >= 0) p.doc.querySelectorAll('.option')[idx].click();
+    else {
+      const input = p.doc.querySelector('[data-spell-input]');
+      input.value = cur.word;
+      p.doc.querySelector('[data-action="submitSpell"]').click();
+    }
+    p.pump(150);
+  }
+  if (p.WQ.state.session) { p.WQ.flow.finishSession(new Date()); p.WQ.router.go('#/result/last'); }
+  p.pump(300);
+  const rText2 = p.doc.getElementById('app').innerText.replace(/\s+/g, ' ');
+  const maxLevel = p.WQ.level.isMaxLevel(p.WQ.state.save.profile.level);
+  log('D9 结算页显示「距下一级还差 X XP」（满级显示巅峰值）',
+    '路由=' + p.env.window.location.hash + ' / 命中=' + /距下一级还差/.test(rText2) + ' / xpToNext=' + p.WQ.state.xpToNext,
+    p.env.window.location.hash.indexOf('#/result/') === 0
+      && (maxLevel ? /巅峰值/.test(rText2) : (/距下一级还差/.test(rText2) && /升到 Lv\./.test(rText2))));
+}
+
 /* ---------- 20. Console 错误 ---------- */
 log('全流程 Console 错误数', String(page.errors.length) + (page.errors.length ? ' → ' + page.errors.join(' | ') : ''), page.errors.length === 0);
+
+/* ---------- 21. 存储故障注入：写盘失败 → 营地提示条 + 主按钮仍可用（docs/06 §1.3 / A17） ----------
+ * 这一段用到 dev/domshim.mjs 新增的 failWrites / failNextWrites / emitStorageEvent / reset。
+ * 用途：把验收报告 §1.3 里"垫片 localStorage 永不抛错 → 写盘失败分支结构性地测不到"这个洞补上。 */
+{
+  const st21 = new Map();
+  const p21 = createPage(st21);
+  p21.pump(1200);
+  p21.env.failWrites({ mode: 'throw' });              // 之后主存档键写入都抛 name==='QuotaExceededError'
+  p21.WQ.actions.commit((s) => { s.save.profile.coins = 123; });   // 触发一次写盘（persist.saveNow）
+  p21.WQ.router.go('#/home');                         // 重渲染营地，读 WQ.persistStatus
+  p21.pump(400);
+  const body21 = p21.doc.getElementById('app').innerText.replace(/\s+/g, ' ');
+  const banner21 = /本次进度未保存/.test(body21);
+  const btn21 = p21.doc.querySelector('[data-action="start"]');
+  let continued21 = false;
+  if (btn21) { btn21.click(); p21.pump(400); continued21 = p21.env.window.location.hash.indexOf('#/battle/') === 0; }
+  log('注入 QuotaExceededError → 营地出现「本次进度未保存」提示条，且主按钮仍可点击继续游戏',
+    'persistStatus=' + p21.WQ.persistStatus + ' / 提示条=' + banner21 + ' / 点主按钮 → ' + p21.env.window.location.hash,
+    p21.WQ.persistStatus === 'failed' && banner21 && !!btn21 && btn21.disabled !== true && continued21);
+}
+
+/* ---------- 22. 配额错误只抛一次 → rounds 裁剪重试并成功写盘（persist.js 的 quota 分支） ---------- */
+{
+  const st22 = new Map();
+  const p22 = createPage(st22);
+  p22.pump(1200);
+  const save22 = p22.WQ.state.save;
+  const roundsBefore22 = save22.rounds.length;
+  for (let i = 0; i < 501; i++) save22.rounds.push({ roundId: 'inject-r' + i });   // 触发裁剪分支：length > B.maxRounds(500)
+  p22.env.failNextWrites(1, { mode: 'quota' });      // 只失败一次，重试必然成功
+  const ok22 = p22.WQ.persist.saveNow(save22);
+  log('配额错误只抛一次 → 走 rounds 裁剪重试路径并成功写盘',
+    'saveNow=' + ok22 + ' / persistStatus=' + p22.WQ.persistStatus + ' / rounds ' + (roundsBefore22 + 501) + ' → ' + save22.rounds.length,
+    ok22 === true && p22.WQ.persistStatus === 'ok' && save22.rounds.length === p22.WQ.balance.maxRounds);
+}
+
+/* ---------- 23. emitStorageEvent 触发 persist.onStorage 的转发（多标签页路径可测） ---------- */
+{
+  const st23 = new Map();
+  const p23 = createPage(st23);
+  p23.pump(1200);                                    // main.js 已注册 window 'storage' → WQ.persist.onStorage
+  let got23 = null;
+  p23.WQ.bus.on('storageExternal', (e) => { got23 = e; });
+  p23.env.store.set('wordquest.save.v1', '{"version":1,"profile":{"level":1,"coins":7}}');  // 模拟"别的标签页已写档"
+  const evt23 = p23.env.emitStorageEvent('wordquest.save.v1');
+  let other23 = null;
+  p23.WQ.bus.on('storageExternal', (e) => { other23 = e; });
+  p23.env.emitStorageEvent('wordquest.settings.v1');  // 非主存档键：persist.onStorage 应直接忽略
+  log('emitStorageEvent → WQ.persist.onStorage 转发 storageExternal（非主存档键不转发）',
+    'event.key=' + evt23.key + ' / 上层收到 key=' + (got23 && got23.key) + ' / 设置键事件=' + (other23 ? '被转发' : '未转发'),
+    !!got23 && got23.key === 'wordquest.save.v1' && other23 === null);
+}
+
+/* ---------- 24. 损坏存档路径不受"可注入垫片"影响（默认未注入时行为不变） ---------- */
+{
+  const st24 = new Map();
+  st24.set('wordquest.save.v1', '{{{ 这不是 JSON');
+  const p24 = createPage(st24);
+  p24.pump(1200);
+  log('损坏存档路径不受注入式垫片影响（未注入时默认行为与既有 73 条一致）',
+    '.bak=' + String(st24.get('wordquest.save.v1.bak')).slice(0, 12) + ' / 路由=' + p24.env.window.location.hash
+      + ' / level=' + p24.WQ.state.save.profile.level + ' / Console 错误=' + p24.errors.length,
+    st24.get('wordquest.save.v1.bak') === '{{{ 这不是 JSON'
+      && p24.WQ.state.save.profile.level === 1
+      && p24.env.window.location.hash === '#/home'
+      && p24.errors.length === 0);
+}
 
 const OUT_DIR = path.join(DEV_DIR, 'out');
 fs.mkdirSync(OUT_DIR, { recursive: true });

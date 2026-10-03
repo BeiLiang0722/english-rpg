@@ -54,30 +54,21 @@ sandbox.crypto = { randomUUID: () => 'uuid-' + Math.random().toString(36).slice(
 sandbox.self = sandbox;
 vm.createContext(sandbox);
 
-/* ---------- 载入模块（顺序与 index.html 一致，去掉纯 UI 文件） ---------- */
-const FILES = [
-  'src/config/balance.js',
-  'src/config/questions.js',
-  'src/config/achievements.js',
-  'src/data/words.js',
-  'src/core/util.js',
-  'src/core/bus.js',
-  'src/store/log.js',
-  'src/core/audio.js',
-  'src/core/router.js',
-  'src/store/save.js',
-  'src/store/persist.js',
-  'src/store/state.js',
-  'src/game/level.js',
-  'src/game/srs.js',
-  'src/game/streak.js',
-  'src/game/questionEngine.js',
-  'src/game/questionPool.js',
-  'src/game/achievements.js',
-  'src/game/shop.js',
-  'src/game/balance.js',
-  'src/ui/selfcheck.js'
-];
+/* ---------- 载入模块：清单以 app/index.html 的 <script src> 顺序为唯一真相 ----------
+ * 规则：去掉纯 UI（src/ui/**）与入口 src/main.js，但保留 src/ui/selfcheck.js（它就是被断言的模块）。
+ * 这样 v0.2 以后新增的 game 模块（chest/quest/…）不会再出现"清单漏文件 → WQ.xxx is undefined"。 */
+function listAppScripts() {
+  const html = fs.readFileSync(path.join(APP, 'index.html'), 'utf8');
+  const out = [];
+  const re = /<script\s+src="([^"]+)"\s*>/g;
+  let m;
+  while ((m = re.exec(html)) !== null) out.push(m[1].replace(/\\/g, '/'));
+  return out;
+}
+const FILES = listAppScripts().filter(function (rel) {
+  if (rel === 'src/ui/selfcheck.js') return true;
+  return rel.indexOf('src/ui/') !== 0 && rel !== 'src/main.js';
+});
 
 const loaded = [];
 for (const rel of FILES) {

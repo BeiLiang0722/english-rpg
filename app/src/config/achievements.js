@@ -1,10 +1,13 @@
 /* src/config/achievements.js
- * 唯一职责：docs/03-PRD §5.7 的 11 个徽章定义（含条件纯函数与进度口径）。
+ * 唯一职责：docs/03-PRD §5.7 的徽章定义（含条件纯函数与进度口径）+ v0.2 新增 3 个（docs/03 §5.9）。
  * 依赖：无（condition 只读存档对象）
  * 被依赖：src/game/achievements.js、src/ui/pages/result.js
  *
- * 顺序即 B1→B11，结算时按此顺序判定与排队弹卡。
- * 奖励合计：金币 400，另 B2 额外 +50 XP。
+ * 顺序即 B1→B14，结算时按此顺序判定与排队弹卡。
+ * v0.2 的 B12–B14 的 checkOn 分别为 quest / chest / reclaim，
+ * 由 game/quest.js、game/chest.js、ui/pages/growth.js 在自己的事务里调用 WQ.ach.checkAchievements 判定，
+ * 不走结算路径（否则玩家白天完成任务时要等到打完一局才解锁）。
+ * 奖励合计：金币 545，另 B2 额外 +50 XP。
  */
 (function (WQ) {
   'use strict';
@@ -149,6 +152,44 @@
       target: 1,
       condition: function (save, ctx) { return !!(ctx && ctx.isPerfect); },
       progress: function (save) { return num(save.stats.perfectRounds) > 0 ? 1 : 0; }
+    },
+    /* ---- v0.2 新增（B12–B14）：把「每天都来」和「把错词打回来」两件事变成可见目标 ----
+       按 docs/03 §5.9，checkOn 为 quest / chest / reclaim，不挂在结算路径上。 */
+    {
+      id: 'dailyRegular',
+      name: '日常猎手',
+      icon: '📋',
+      desc: '首次完成当日全部每日任务',
+      coinReward: 40,
+      xpReward: 0,
+      checkOn: 'quest',
+      target: 1,
+      condition: function (save) { return num(save.daily && save.daily.questBonusClaimed) >= 1; },
+      progress: function (save) { return num(save.daily && save.daily.questBonusClaimed) >= 1 ? 1 : 0; }
+    },
+    {
+      id: 'proofReturn',
+      name: '浪子回头',
+      icon: '🔁',
+      desc: '在错题本里重练并答对 1 个词',
+      coinReward: 30,
+      xpReward: 0,
+      checkOn: 'reclaim',
+      target: 1,
+      condition: function (save) { return !!(save.daily && num(save.daily.reclaimed) >= 1); },
+      progress: function (save) { return num(save.daily && save.daily.reclaimed); }
+    },
+    {
+      id: 'treasureHunter',
+      name: '宝箱猎人',
+      icon: '🎁',
+      desc: '累计打开 3 个随机宝箱',
+      coinReward: 50,
+      xpReward: 0,
+      checkOn: 'chest',
+      target: 3,
+      condition: function (save) { return num(save.profile && save.profile.chestOpenedTotal) >= 3; },
+      progress: function (save) { return num(save.profile && save.profile.chestOpenedTotal); }
     }
   ];
 

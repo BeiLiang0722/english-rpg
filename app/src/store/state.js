@@ -21,8 +21,14 @@
       loading: true,
       exampleOpen: false,
       multiTabNotice: false,
+      /* v0.2（D3）：写盘前检测到别的标签页写过并且已经合并时置位，由当前页面消费成一次提示 */
+      multiTabMerged: false,
       pendingToasts: [],
-      interruptNotice: null
+      interruptNotice: null,
+      /* v0.2：一次中断恢复的摘要（刷新/崩溃后补结算），营地据此给出具体数字 */
+      recoveredNotice: null,
+      /* v0.2：跨天结算产生的待播报内容（每日任务/宝箱），由营地消费一次 */
+      dailyNotice: null
     },
     /** 本次启动的闪现数据（升级队列、徽章、Toast），不持久化 */
     boot: {
@@ -87,6 +93,21 @@
       const a = state.save && state.save.achievements;
       if (!a) return 0;
       return Object.keys(a).filter(function (k) { return a[k] && a[k].unlocked; }).length;
+    }
+  });
+
+  /** v0.2 派生量：今日任务视图 / 宝箱视图（save 未就绪时返回安全空值） */
+  Object.defineProperty(state, 'quests', {
+    get: function () {
+      if (!state.save || !WQ.quest) return [];
+      try { return WQ.quest.list(state.save); } catch (e) { return []; }
+    }
+  });
+
+  Object.defineProperty(state, 'chestView', {
+    get: function () {
+      if (!state.save || !WQ.chest) return null;
+      try { return WQ.chest.view(state.save, new Date()); } catch (e) { return null; }
     }
   });
 

@@ -53,14 +53,14 @@
       save.streak.repairUsedThisMonth = (Number(save.streak.repairUsedThisMonth) || 0) + 1;
     }
 
-    /* 效果登记 */
+    /* 效果登记（v0.2 起写入 profile，避免被 fillDefaults 白名单丢弃，修验收报告 D5） */
     let repaired = null;
     if (itemId === 'heartGuard') {
       save.profile.nextRoundHpBonus = (Number(save.profile.nextRoundHpBonus) || 0) + 1;
     } else if (itemId === 'scoutEye') {
-      save.pendingScoutEye = Math.max(0, Number(save.pendingScoutEye) || 0) + B.scoutEyeExcludes;
+      save.profile.pendingScoutEye = Math.max(0, Number(save.profile.pendingScoutEye) || 0) + B.scoutEyeExcludes;
     } else if (itemId === 'strawDouble') {
-      save.pendingStrawDouble = true;
+      save.profile.pendingStrawDouble = true;
     } else if (itemId === 'repairCard') {
       /* 有可修复漏天时立即修复并接上连击 */
       const res = WQ.streak.consumeRepairCard(save, nowDate);
@@ -89,9 +89,11 @@
   /** 待生效道具状态条文案 */
   function pendingEffects(save) {
     const list = [];
+    const scoutEye = Math.max(0, Number(save.profile.pendingScoutEye) || Number(save.pendingScoutEye) || 0);
+    const straw = !!(save.profile.pendingStrawDouble || save.pendingStrawDouble);
     if (Number(save.profile.nextRoundHpBonus) > 0) list.push('护心符 ×' + save.profile.nextRoundHpBonus + '（下一局 ' + (B.hp.max + save.profile.nextRoundHpBonus) + ' 颗心）');
-    if (Number(save.pendingScoutEye) > 0) list.push('侦查之眼（下一局排除 ' + save.pendingScoutEye + ' 个错误选项）');
-    if (save.pendingStrawDouble) list.push('替身稻草人（下一局首次血量归零时复活）');
+    if (scoutEye > 0) list.push('侦查之眼（下一局排除 ' + scoutEye + ' 个错误选项）');
+    if (straw) list.push('替身稻草人（下一局首次血量归零时复活）');
     if (Number(save.streak.repairCards) > 0) list.push('回补卡 ×' + save.streak.repairCards + '（可在营地提示条使用）');
     return list;
   }

@@ -29,11 +29,20 @@
 
   /**
    * 升级判定循环（docs/03 §4.5）：level<20 且 xp>=needXp(level) 则升级，每次 +30 金币。
-   * 就地修改传入的 profile，并返回升级明细。
+   * 就地修改传入的 profile 的 level / xp，并返回升级明细。
+   *
+   * v0.2：**默认不再直接改 profile.coins**，升级金币只从 `coinsFromLevels` 返回，
+   * 由调用方（applyRoundEnd / 商店 / 开箱）在自己的同一笔账里入账。
+   * 原因：applyRoundEnd 的账目已按"会话本体 + 明细行"算好总额，
+   * 如果升级再偷偷改一次 profile.coins，档内金币增量就会和明细行之和永远对不上。
+   * 需要旧行为的调用方可以传 `{ credit: true }`。
+   *
    * @param {{level:number,xp:number,coins:number}} profile
+   * @param {object} [opts] { credit:boolean } credit=true 时就地加金币（兼容旧调用）
    * @returns {{levelUps: Array<{from:number,to:number,title:string,xpAfter:number}>, coinsFromLevels:number, reachedMax:boolean}}
    */
-  function applyLevelUps(profile) {
+  function applyLevelUps(profile, opts) {
+    const credit = !!(opts && opts.credit);
     const levelUps = [];
     let coinsFromLevels = 0;
     if (!profile || typeof profile !== 'object') return { levelUps: levelUps, coinsFromLevels: 0, reachedMax: false };
@@ -50,7 +59,7 @@
       const from = profile.level;
       profile.xp -= needXp(profile.level);
       profile.level += 1;
-      profile.coins = (Number(profile.coins) || 0) + B.coins.levelUp;
+      if (credit) profile.coins = (Number(profile.coins) || 0) + B.coins.levelUp;
       coinsFromLevels += B.coins.levelUp;
       levelUps.push({
         from: from,

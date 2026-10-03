@@ -95,17 +95,24 @@
     const total = rec.totalQuestions || 0;
     const acc = total ? rec.correct / total : 0;
     const isWin = !!rec.isWin;
-    /* 顶部三列展示"本局总入账"：对局本体 + 徽章奖励 + 升级奖励（明细逐行相加等于合计） */
-    const totalXp = (Number(rec.xpGained) || 0) + (Number(rec.bonusXp) || 0);
-    const totalCoins = (Number(rec.coinsGained) || 0) + (Number(rec.bonusCoins) || 0);
+    /* v0.2：顶部三列展示"本局总入账"。
+       XP：对局本体 + 徽章 XP + 每日任务 XP（明细里就是这三类）。
+       金币：直接由明细行汇总 —— 明细已经覆盖了徽章/升级/任务全部金币来源，
+             这样「顶部合计 === 明细逐行相加 === profile.coins 实增」三个数永远一致，
+             也不会因为以后再加一类奖励而忘记同步（v0.2 修掉过一次这类脏账）。 */
+    const totalXp = (Number(rec.xpGained) || 0) + (Number(rec.bonusXp) || 0) + (Number(rec.questXp) || 0);
+    const detailCoinSum = (rec.breakdown || [])
+      .filter(function (b) { return b && b.unit === 'coin'; })
+      .reduce(function (a, b) { return a + (Number(b.value) || 0); }, 0);
+    const totalCoins = (Number(rec.coinsGained) || 0) + detailCoinSum;
 
     WQ.shell.setActions(actions);
     WQ.shell.render([
       '<main class="page" id="main">',
       '  <div class="result-hero">',
       '    <div class="result-shield' + (isWin ? '' : ' is-lose') + '" aria-hidden="true">' + (isWin ? (rec.isPerfect ? '🏆' : '🛡️') : '💔') + '</div>',
-      '    <h1 class="result-title">' + (isWin ? '本局完成！' : '再接再厉') + '</h1>',
-      '    <p class="result-sub">' + total + ' 题 · 用时 ' + U.esc(U.formatDuration(rec.durationMs)) + (rec.isPerfect ? ' · 无伤通关 ✨' : '') + '</p>',
+      '    <h1 class="result-title">' + (rec.aborted ? '本局已中断' : (isWin ? '本局完成！' : '再接再厉')) + '</h1>',
+      '    <p class="result-sub">' + total + ' 题 · 用时 ' + U.esc(U.formatDuration(rec.durationMs)) + (rec.isPerfect ? ' · 无伤通关 ✨' : '') + (rec.aborted ? ' · 已获得收益全部保留' : '') + '</p>',
       '  </div>',
       '  <section class="card">',
       '    <div class="stat-grid">',
@@ -124,6 +131,10 @@
         (WQ.level.isMaxLevel(save.profile.level) ? U.esc(U.formatNumber(save.profile.totalXp)) : U.esc(save.profile.xp) + '/' + U.esc(WQ.level.needXp(save.profile.level))) + '</span></h2>',
       '    <div class="progress" id="result-xpbar" role="progressbar" aria-label="经验值进度"><i></i></div>',
       '    <p class="overlay-text">Lv.' + U.esc(save.profile.level) + ' · ' + U.esc(WQ.level.titleFor(save.profile.level)) + '</p>',
+      /* v0.2 修验收报告 D9（A7 第 5 个数字）：结算页补「距下一级还差 X XP」，满级显示巅峰值 */
+      '    <p class="xp-to-next" role="status">' + (WQ.level.isMaxLevel(save.profile.level)
+        ? '已达满级 · 巅峰值 ' + U.esc(U.formatNumber(save.profile.totalXp)) + ' XP'
+        : '距下一级还差 <strong class="mono">' + U.esc(WQ.state.xpToNext == null ? 0 : WQ.state.xpToNext) + '</strong> XP 升到 Lv.' + U.esc(save.profile.level + 1)) + '</p>',
       '  </section>',
       '  <section class="card">',
       '    <h2 class="card-title">奖励明细</h2>',
@@ -148,7 +159,13 @@
     document.querySelectorAll('[data-roll]').forEach(function (el) {
       WQ.anim.rollNumber(el, Number(el.getAttribute('data-roll')) || 0, {
         prefix: el.getAttribute('data-prefix') || '',
-        suffix: el.getAttribute('data-suffix') || ''
+        suffix: el.getAttribute('data-suffix') || '',
+        /* v0.2：数字滚完时给该数字加一次弹动，让「+250 XP」真的有落地感 */
+        onDone: function () {
+          el.classList.remove('is-bump');
+          void el.offsetWidth; /* 强制重排，保证连点也能重新触发动画 */
+          el.classList.add('is-bump');
+        }
       });
     });
 

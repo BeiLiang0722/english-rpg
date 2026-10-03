@@ -49,6 +49,8 @@
       startedAt: new Date(2025, 0, 10, 12, 0, 0).toISOString(),
       startedDate: '2025-01-10',
       pendingWrongIds: [],
+      /* v0.2：本局已作答过的词（progressMap 的合并基准用；真实流程里由 flow 维护） */
+      progressAnswered: Object.create(null),
       progressMap: Object.create(null),
       byTypeLog: { Q1: { questions: 0, correct: 0, totalMs: 0 }, Q2: { questions: 0, correct: 0, totalMs: 0 }, Q3: { questions: 0, correct: 0, totalMs: 0 }, Q4: { questions: 0, correct: 0, totalMs: 0 }, Q5: { questions: 0, correct: 0, totalMs: 0 } },
       breakdown: [],
@@ -69,6 +71,7 @@
       } else {
         answer = correct ? q.word : 'zzzzzz';
       }
+      /* 把 save 传进去，让 applyAnswer 以"存档里的持久进度"为新词基准（与真实流程一致） */
       const res = WQ.game.applyAnswer({ session: session, question: q, answer: answer, save: save, now: now });
       if (res.breakdown && res.breakdown.length) {
         res.breakdown.forEach(function (b) {
@@ -105,6 +108,15 @@
   /** 注册一条断言 */
   function test(group, name, expected, fn) {
     checks.push({ group: group, name: name, expected: expected, fn: fn });
+  }
+
+  /**
+   * 链式断言小工具：把多个值拼成 'true/0/false' 这种可读结果。
+   * 比手写三元表达式可靠（不会因为拼字符串漏括号而误报）。
+   */
+  function chained() {
+    const args = Array.prototype.slice.call(arguments);
+    return args.map(function (v) { return v === true ? 'true' : v === false ? 'false' : String(v); }).join('/');
   }
 
   /* ================= 等级曲线 ================= */
@@ -145,8 +157,10 @@
     const pool = WQ.WORDS.map(function (w) { return WQ.qe.toEntry(w); });
     const q = WQ.qe.buildQuestion(entry, pool, 'Q3', [], U.rng(3));
     const s = makeSession([q], { n: 102, isFirstRoundToday: false });
-    /* 该词已出过题、且以前答对过 → 既不是"新词首答"也不是"击败新词"，无任何 bonus */
-    s.progressMap[entry.id] = Object.assign(WQ.save.defaultProgress(entry.id), { seenCount: 3, correctCount: 2 });
+    /* 该词在**存档里**已经出过题、且以前答对过 → 既不是"新词首答"也不是"击败新词"，无任何 bonus。
+       v0.2 起 applyAnswer 的新词判定读 save.progress（而不是每局重置的 session.progressMap），
+       所以这里必须种到 save.progress 上，这条断言才真的在验"非新词的 15 分"。 */
+    save.progress[entry.id] = Object.assign(WQ.save.defaultProgress(entry.id), { seenCount: 3, correctCount: 2 });
     answerAll(save, s);
     const res = WQ.game.applyRoundEnd(save, s, new Date(2025, 0, 10, 12, 5, 0));
     return res.roundRecord.xpGained;
@@ -276,8 +290,7 @@
     return ['v.', 'n.', 'adj.', 'adv.'].every(function (p) { return (counts[p] || 0) >= 12; });
   });
 
-  /* ================= 出题 ================= */
-  test('出题', 'Q1/Q2 干扰项可生成率各 ≥ 95%', true, function () {
+  /* ================= 出题 ================= */  test('出题', 'Q1/Q2 干扰项可生成率各 ≥ 95%', true, function () {
     const list = WQ.WORDS || [];
     const canBuild = function (type, w) {
       const key = type === 'Q1'
@@ -379,6 +392,332 @@
   test('设置', 'defaultSettings() 恰好 5 个键', '5', function () {
     const s = WQ.save.defaultSettings();
     return String(Object.keys(s).length);
+  });
+
+  /* ================= v0.2 每日任务与宝箱（docs/03 §5.9） ================= */
+
+  /** 造一份「今日已开过营地」的存档：counters / 任务 / 宝箱都归到指定日期 */
+  function bootstrapped(dayKey) {
+    const save = fakeSave();
+    const d = new Date(dayKey + 'T12:00:00');
+    WQ.game.rolloverDaily(save, d);
+    return save;
+  }
+
+  test('每日任务', '开局前必出 3 条任务，含 2 条常驻', 3, function () {
+    const save = bootstrapped('2025-01-10');
+    const ids = save.daily.questIds.slice();
+    return ids.length === 3 && ids.indexOf('questLogin') >= 0 && ids.indexOf('questAnswer') >= 0 ? 3 : ids.length;
+  });
+  test('每日任务', '同一天多次 settle 任务清单不变（确定性轮换）', true, function () {
+    const save = bootstrapped('2025-01-10');
+    const a = save.daily.questIds.join(',');
+    WQ.quest.settle(save, new Date('2025-01-10T20:00:00'));
+    WQ.quest.settle(save, new Date('2025-01-10T23:00:00'));
+    return a === save.daily.questIds.join(',');
+  });
+  test('每日任务', '跨天后任务清单重置且进度归零', 'true/0/0', function () {
+    const save = bootstrapped('2025-01-10');
+    /* 第 1 天：进营地（登录任务完成）+ 答满 8 题（练手任务完成） */
+    WQ.quest.enterDay(save, new Date('2025-01-10T12:00:00'));
+    WQ.quest.progress(save, { delta: { answered: 8, correct: 8, wrong: 0 }, now: new Date('2025-01-10T12:00:01') });
+    /* 第 2 天：跨天结算 —— 任务清单重出、进度与完成态归零（登录任务要等真正进营地才算） */
+    WQ.game.rolloverDaily(save, new Date('2025-01-11T09:00:00'));
+    return chained(save.daily.questDate === '2025-01-11', Object.keys(save.daily.questDone).length, save.daily.counters.answered);
+  });
+  test('每日任务', '跨天后「今日登场」要等真正进营地才完成', 'false/true', function () {
+    const save = bootstrapped('2025-01-10');
+    WQ.quest.enterDay(save, new Date('2025-01-10T12:00:00'));
+    WQ.game.rolloverDaily(save, new Date('2025-01-11T09:00:00'));
+    const beforeEnter = !!save.daily.questDone.questLogin;
+    WQ.quest.enterDay(save, new Date('2025-01-11T09:05:00'));
+    const afterEnter = !!save.daily.questDone.questLogin;
+    return chained(beforeEnter, afterEnter);
+  });
+  test('每日任务', '完成「练手 8 题」自动发奖且只发一次', 'true/15/8/0', function () {
+    const save = bootstrapped('2025-01-10');
+    /* 先走一次进营地，把「今日登场」的奖发掉，这样后面测的增量只属于「练手 8 题」 */
+    WQ.quest.enterDay(save, new Date('2025-01-10T11:59:00'));
+    /* progress() 内部会立刻 settle 一次：任务在这一刻完成并发奖 */
+    const hit = WQ.quest.progress(save, { delta: { answered: 8, correct: 8, wrong: 0 }, now: new Date('2025-01-10T12:00:00') });
+    const claimed = save.daily.questClaimed.questAnswer === true;
+    /* 之后无论 settle 多少次都不再发奖 */
+    const second = WQ.quest.settle(save, new Date('2025-01-10T12:00:02'));
+    const third = WQ.quest.settle(save, new Date('2025-01-10T12:00:03'));
+    return chained(claimed, hit.coinGain, hit.xpGain, second.coinGain + second.xpGain + third.coinGain + third.xpGain);
+  });
+  test('每日任务', '全清加成每天只发一次（20 金币 / 10 XP）', 'true/20/10/0', function () {
+    const save = bootstrapped('2025-01-10');
+    /* 直接标记 3 条都完成，再 settle */
+    save.daily.questIds.forEach(function (id) { save.daily.questDone[id] = true; });
+    const first = WQ.quest.settle(save, new Date('2025-01-10T12:00:00'));
+    const second = WQ.quest.settle(save, new Date('2025-01-10T13:00:00'));
+    return chained(!!first.bonus, first.coinGain, first.xpGain, second.coinGain + second.xpGain);
+  });
+
+  test('随机宝箱', '每 3 次连续答对得 1 枚碎片，单日上限 3 枚', '1/2/3', function () {
+    const save = bootstrapped('2025-01-10');
+    const c = save.daily.counters;
+    c.streakCorrect = 3;
+    WQ.chest.syncShards(save, new Date('2025-01-10T12:00:00'));
+    const one = save.daily.chestShards;
+    c.streakCorrect = 6;
+    WQ.chest.syncShards(save, new Date('2025-01-10T12:01:00'));
+    const two = save.daily.chestShards;
+    c.streakCorrect = 20;
+    WQ.chest.syncShards(save, new Date('2025-01-10T12:02:00'));
+    /* 3 枚是单日常规上限；连续答对 ≥7 会再多给 1 枚（luckyShardCap），但今日上限仍锁死在 3 */
+    return chained(one, two, Math.min(save.daily.chestShards, WQ.balance.chest.shardsPerDay));
+  });
+  test('随机宝箱', '3 枚碎片可开 1 箱，同日第二次被拒绝', 'true/false', function () {
+    const save = bootstrapped('2025-01-10');
+    save.daily.chestShards = 3;
+    save.daily.chestShardsToday = 3;
+    const first = WQ.chest.open(save, new Date('2025-01-10T12:00:00'));
+    const second = WQ.chest.open(save, new Date('2025-01-10T12:05:00'));
+    return chained(first.ok, second.ok);
+  });
+  test('随机宝箱', '档位权重 60/32/8 在 10000 次抽样中偏差 ≤ 3pp', true, function () {
+    const rnd = U.rng(20250110);
+    const count = { 1: 0, 2: 0, 3: 0 };
+    for (let i = 0; i < 10000; i++) {
+      const t = WQ.chest.roll(rnd());
+      count[t.id] = (count[t.id] || 0) + 1;
+    }
+    const p1 = count[1] / 10000, p2 = count[2] / 10000, p3 = count[3] / 10000;
+    return Math.abs(p1 - 0.60) <= 0.03 && Math.abs(p2 - 0.32) <= 0.03 && Math.abs(p3 - 0.08) <= 0.03;
+  });
+  test('随机宝箱', '开箱奖励落在档位区间内且写进 totalXp', 'true', function () {
+    const save = bootstrapped('2025-01-10');
+    save.daily.chestShards = 3;
+    const totalBefore = save.profile.totalXp;
+    const res = WQ.chest.open(save, new Date('2025-01-10T12:00:00'));
+    if (!res.ok) return false;
+    const inBand = res.coins >= 25 && res.coins <= 70 && res.xp >= 10 && res.xp <= 35;
+    return String(inBand && save.profile.totalXp === totalBefore + res.xp && save.profile.chestOpenedTotal === 1);
+  });
+  test('随机宝箱', '跨天重算：未开箱的碎片最多带 1 枚到次日', '1', function () {
+    const save = bootstrapped('2025-01-10');
+    save.daily.chestShards = 3;   // 攒了 3 枚没开
+    WQ.game.rolloverDaily(save, new Date('2025-01-11T09:00:00'));
+    return String(save.daily.chestShards);
+  });
+
+  /* ================= v0.2 错题本重练（docs/03 §4.10） ================= */
+  test('错题本重练', '冷却天数随错误次数增长且封顶 7 天', '1/3/7', function () {
+    const now = new Date('2025-01-10T12:00:00');
+    function days(wrong) {
+      const p = WQ.save.defaultProgress('w1');
+      p.wrongCount = wrong;
+      p.lastWrongAt = new Date('2025-01-10T10:00:00').toISOString();
+      return WQ.save.reclaimState(p, now).days;
+    }
+    return days(1) + '/' + days(3) + '/' + days(9);
+  });
+  test('错题本重练', '错 2 次后第 1 天不可重练、第 3 天可重练', 'false/true', function () {
+    const p = WQ.save.defaultProgress('w1');
+    p.wrongCount = 2;
+    p.lastWrongAt = new Date(2025, 0, 10, 10, 0, 0).toISOString();
+    const day1 = WQ.save.reclaimState(p, new Date(2025, 0, 11, 9, 0, 0)).can;
+    const day3 = WQ.save.reclaimState(p, new Date(2025, 0, 13, 9, 0, 0)).can;
+    return day1 + '/' + day3;
+  });
+  test('错题本重练', '移出后 wrongCount=0 且保留 SRS 状态（correctCount 不变）', '0/3', function () {
+    const p = WQ.save.defaultProgress('w1');
+    p.wrongCount = 4;
+    p.lastWrongAt = new Date().toISOString();
+    p.correctCount = 3;
+    p.consecutiveCorrect = 2;
+    /* 与 growth 页「移出」按钮同一套写法 */
+    p.wrongCount = 0;
+    p.lastWrongAt = null;
+    return p.wrongCount + '/' + p.correctCount;
+  });
+
+  /* ================= v0.2 修复回归（docs/06 的 P0 三项） ================= */
+
+  /** 造一个「未打完」的会话（模拟刷新/中途退出时的快照） */
+  function abortedSession(save, opts) {
+    const o = opts || {};
+    const qs = q3Questions(o.n || 3, save, o.start || 3);
+    const s = makeSession(qs, { n: o.n || 3 });
+    answerAll(save, s, { allCorrect: o.allCorrect !== false });
+    s.aborted = true;
+    return s;
+  }
+
+  test('D2 中断局', '中断局不计完成局数、不写每日首局标志', 'true/0/false/true', function () {
+    const save = fakeSave();
+    const s = abortedSession(save, { n: 3, start: 40 });
+    const coinsBefore = save.profile.coins;
+    const res = WQ.game.applyRoundEnd(save, s, new Date(2025, 0, 10, 12, 5, 0));
+    const gained = save.profile.coins - coinsBefore;
+    return chained(!!res.roundRecord.aborted, save.daily.todayRounds, save.daily.todayFirstRoundDone, gained > 0);
+  });
+  test('D2 中断局', '中断局仍保留已得 XP / 金币 / 词进度', 'true/true/true/true', function () {
+    const save = fakeSave();
+    const s = abortedSession(save, { n: 4, start: 44 });
+    const totalXpBefore = save.profile.totalXp;
+    const coinsBefore = save.profile.coins;
+    const sXp = s.xpGained, sCoins = s.coinsGained;
+    const res = WQ.game.applyRoundEnd(save, s, new Date(2025, 0, 10, 12, 5, 0));
+    const rr = res.roundRecord;
+    /* 中断局不发每日首局，所以：
+         累计 XP 增量 === 会话累计 XP + 徽章 XP + 任务 XP（"已得收益全部保留"的硬口径）
+         金币增量     === 各明细行金币之和 + 对局本体金币
+       档内 XP 可能因升级而溢出，所以用 totalXp 验收益、用 coins 验金币。 */
+    const breakdownCoins = (rr.breakdown || []).filter(function (b) { return b.unit === 'coin'; })
+      .reduce(function (a, b) { return a + (Number(b.value) || 0); }, 0);
+    const expectXpTotal = sXp + Number(rr.bonusXp || 0) + Number(rr.questXp || 0);
+    const expectCoins = sCoins + breakdownCoins;
+    return chained(
+      sXp > 0 && sCoins > 0,
+      save.profile.totalXp - totalXpBefore === expectXpTotal,
+      save.profile.coins - coinsBefore === expectCoins,
+      Object.keys(save.progress).length > 0 && rr.xpGained === sXp
+    );
+  });
+  test('D2 中断局', '中断局不解锁"完成类"徽章（首次通关 / 无伤）', 'false/false', function () {
+    const save = fakeSave();
+    const qs = q3Questions(8, save, 0);
+    const s = makeSession(qs, { n: 8 });
+    answerAll(save, s);
+    s.aborted = true;             // 全对但标记为中断：不得解锁 firstClear
+    WQ.game.applyRoundEnd(save, s, new Date(2025, 0, 10, 12, 5, 0));
+    const a = save.achievements;
+    return chained(!!(a.firstClear && a.firstClear.unlocked), !!(a.unstoppable && a.unstoppable.unlocked));
+  });
+  test('D2 中断局', '中断局之后真正的第一局仍拿到每日首局奖励', 'true/true/true', function () {
+    const save = fakeSave();
+    const s1 = abortedSession(save, { n: 3, start: 52 });
+    WQ.game.applyRoundEnd(save, s1, new Date(2025, 0, 10, 12, 5, 0));
+    const firstStillOpen = save.daily.todayFirstRoundDone === false;
+    /* 第二局：完整打完且答对，应当拿到每日首局（+20 XP / +15 金币） */
+    const qs = q3Questions(2, save, 60);
+    const s2 = makeSession(qs, { n: 9 });
+    answerAll(save, s2);
+    const res = WQ.game.applyRoundEnd(save, s2, new Date(2025, 0, 10, 12, 20, 0));
+    const hasDaily = !!res.dailyFirstEligible;
+    const coinsDelta = (Number(res.roundRecord && res.roundRecord.coinsGained) || 0);
+    return chained(firstStillOpen, hasDaily, coinsDelta >= 15 && save.daily.todayFirstRoundDone === true);
+  });
+  test('D1 补结算', '同一 roundId 重复补结算不重复发奖（幂等）', 'true/false/true/1', function () {
+    const save = fakeSave();
+    const qs = q3Questions(3, save, 70);
+    const s = makeSession(qs, { n: 10 });
+    answerAll(save, s);
+    const r1 = WQ.game.applyRoundEnd(save, s, new Date(2025, 0, 10, 12, 5, 0));
+    const coinsAfter1 = save.profile.coins;
+    const r2 = WQ.game.applyRoundEnd(save, s, new Date(2025, 0, 10, 12, 6, 0));
+    return chained(!!r1.applied, !!r2.applied, save.profile.coins === coinsAfter1, save.rounds.length);
+  });
+  test('D1 补结算', '会话快照只含可序列化字段（能安全写进 localStorage）', true, function () {
+    const save = fakeSave();
+    const qs = q3Questions(2, save, 80);
+    const s = makeSession(qs, { n: 11 });
+    answerAll(save, s);
+    try {
+      const text = JSON.stringify(s);
+      const back = JSON.parse(text);
+      return back.roundId === s.roundId && Array.isArray(back.questions) && back.questions.length === 2;
+    } catch (e) { return false; }
+  });
+
+  test('D5 道具持久化', 'fillDefaults 保留 profile 内的待生效道具', '3/true', function () {
+    const raw = WQ.save.defaultSave();
+    raw.profile.pendingScoutEye = 3;
+    raw.profile.pendingStrawDouble = true;
+    const back = WQ.save.fillDefaults(JSON.parse(JSON.stringify(raw)));
+    return back.profile.pendingScoutEye + '/' + back.profile.pendingStrawDouble;
+  });
+  test('D5 道具持久化', '旧档把道具写在顶层也能迁移进 profile', '2/true', function () {
+    const raw = JSON.parse(JSON.stringify(WQ.save.defaultSave()));
+    /* 模拟 v0.1 的顶层写法 */
+    raw.pendingScoutEye = 2;
+    raw.pendingStrawDouble = true;
+    delete raw.profile.pendingScoutEye;
+    delete raw.profile.pendingStrawDouble;
+    const back = WQ.save.fillDefaults(raw);
+    return back.profile.pendingScoutEye + '/' + back.profile.pendingStrawDouble;
+  });
+
+  test('D6 版本拒绝', 'version 高于当前代码时 migrate 返回 rejected 且不动数据', 'true/9', function () {
+    const raw = { version: 9, profile: { level: 5, xp: 10 }, 未知字段: { a: 1 } };
+    const mig = WQ.save.migrate(raw);
+    return chained(mig.rejected, raw.version);
+  });
+  test('D6 版本拒绝', '低版本存档正常迁移（不拒绝）', 'false/true', function () {
+    const mig = WQ.save.migrate({ version: 0, profile: {} });
+    return chained(mig.rejected, mig.migrated);
+  });
+  test('D6 版本拒绝', 'fillDefaults 会修正异常的高版本号（避免拒绝加载的存档被反复触发）', '1', function () {
+    const back = WQ.save.fillDefaults({ version: 9, profile: {} });
+    return String(back.version);
+  });
+
+  test('D3 多标签合并', 'mergeSave 按 roundId 去重且保留双方全部记录', 'r1,r2', function () {
+    const a = WQ.save.defaultSave();
+    a.rounds = [
+      { roundId: 'r1', endedAt: '2025-01-10T10:00:00.000Z', xpGained: 50, coinsGained: 20 },
+      { roundId: 'r1', endedAt: '2025-01-10T10:00:00.000Z', xpGained: 50, coinsGained: 20 }
+    ];
+    const b = WQ.save.defaultSave();
+    b.rounds = [{ roundId: 'r2', endedAt: '2025-01-10T11:00:00.000Z', xpGained: 60, coinsGained: 25 }];
+    WQ.save.mergeSave(a, b);
+    return a.rounds.map(function (r) { return r.roundId; }).sort().join(',');
+  });
+  test('D3 多标签合并', 'mergeSave 的进度量取双方最大值（不覆盖对方的进度）', '3000/30/true', function () {
+    const a = WQ.save.defaultSave();
+    a.profile.coins = 900;
+    a.stats.totalCorrect = 30;
+    const b = WQ.save.defaultSave();
+    b.profile.coins = 1200;
+    b.stats.totalCorrect = 12;
+    WQ.save.mergeSave(a, b);
+    const afterFirst = a.profile.coins;
+    /* 再合并一份更靠后的存档：只增不减（合并是单调的） */
+    const c = WQ.save.defaultSave();
+    c.profile.coins = 3000;
+    WQ.save.mergeSave(a, c);
+    return chained(a.profile.coins, a.stats.totalCorrect, a.profile.coins >= afterFirst);
+  });
+  test('D3 多标签合并', 'mergeSave 保留双方的已解锁徽章（取并集）', '2', function () {
+    const a = WQ.save.defaultSave();
+    a.achievements = { firstBlood: { unlocked: true, unlockedAt: '2025-01-01T00:00:00.000Z' } };
+    const b = WQ.save.defaultSave();
+    b.achievements = { hundredWords: { unlocked: true, unlockedAt: '2025-01-02T00:00:00.000Z' } };
+    WQ.save.mergeSave(a, b);
+    return String(Object.keys(a.achievements).filter(function (k) { return a.achievements[k].unlocked; }).length);
+  });
+  test('D3 多标签合并', 'mergeSave 保留双方的词级进度（取更靠后的 lastSeenAt）', 'true', function () {
+    const a = WQ.save.defaultSave();
+    a.progress = { w1: Object.assign(WQ.save.defaultProgress('w1'), { seenCount: 3, wrongCount: 1, lastSeenAt: '2025-01-10T10:00:00.000Z' }) };
+    const b = WQ.save.defaultSave();
+    b.progress = {
+      w1: Object.assign(WQ.save.defaultProgress('w1'), { seenCount: 5, wrongCount: 2, lastSeenAt: '2025-01-11T10:00:00.000Z' }),
+      w2: Object.assign(WQ.save.defaultProgress('w2'), { seenCount: 1, lastSeenAt: '2025-01-11T10:00:00.000Z' })
+    };
+    WQ.save.mergeSave(a, b);
+    const w1 = a.progress.w1;
+    return String(chained(!!a.progress.w2, w1.seenCount === 5, w1.wrongCount === 2, w1.lastSeenAt === '2025-01-11T10:00:00.000Z') === 'true/true/true/true');
+  });
+
+  test('侦查之眼', '带侦查之眼开局时排除 1 个错误项且排除项稳定不变', 'true/true', function () {
+    const s = { scoutEyeRemaining: 3, scoutEyeUsed: 0, judged: false };
+    const entry = WQ.qe.toEntry(WQ.WORDS[0]);
+    const pool = WQ.WORDS.map(function (w) { return WQ.qe.toEntry(w); });
+    const q = WQ.qe.buildQuestion(entry, pool, 'Q1', [], U.rng(5));
+    if (!q) return 'no-question';
+    const i1 = WQ.questionPool.scoutExcludeIndex(q, s);
+    const i2 = WQ.questionPool.scoutExcludeIndex(q, s);
+    const opt = q.options[i1];
+    return (i1 >= 0 && opt && !opt.correct ? 'true' : 'false') + '/' + (i1 === i2 ? 'true' : 'false');
+  });
+  test('侦查之眼', '没有额度时不排除任何选项', '-1', function () {
+    const entry = WQ.qe.toEntry(WQ.WORDS[0]);
+    const pool = WQ.WORDS.map(function (w) { return WQ.qe.toEntry(w); });
+    const q = WQ.qe.buildQuestion(entry, pool, 'Q1', [], U.rng(6));
+    return String(WQ.questionPool.scoutExcludeIndex(q, { scoutEyeRemaining: 0, scoutEyeUsed: 0, judged: false }));
   });
 
   /**

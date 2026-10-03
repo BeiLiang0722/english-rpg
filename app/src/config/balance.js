@@ -119,11 +119,60 @@
       repairPerMonth: 2
     },
 
+    /* ---- v0.2 每日任务（docs/03 §5.9） ----
+       常驻 2 条 + 轮换 1 条 = 每日 3 条，全部自动结算（不要求玩家点「领取」，避免打卡压力）。
+       reward 合计 + 全清加成 = 65 金币 / 18 XP，跨天由 game/quest.js 的 settle() 幂等结算。 */
+    daily: {
+      questCount: 3,          // 常驻 2 + 轮换 1
+      firstClearBonusCoins: 20,
+      firstClearBonusXp: 10,
+      quests: [
+        { id: 'questLogin', kind: 'login', name: '今日登场', desc: '打开一次游戏', target: 1, xp: 5, coins: 5 },
+        { id: 'questAnswer', kind: 'answer', name: '练手 8 题', desc: '今日累计作答 8 题', target: 8, xp: 8, coins: 15 },
+        { id: 'questCorrect', kind: 'correct', name: '答对 6 题', desc: '今日累计答对 6 题', target: 6, xp: 8, coins: 15 },
+        { id: 'questPerfect', kind: 'perfect', name: '一局全对', desc: '今日有 1 局全对', target: 1, xp: 10, coins: 15 },
+        { id: 'questRound', kind: 'round', name: '拿下 2 局', desc: '今日完成 2 局', target: 2, xp: 8, coins: 15 },
+        { id: 'questWrong', kind: 'wrong', name: '挫败 4 个错词', desc: '今日答错 4 题并记入错题本', target: 4, xp: 6, coins: 12 },
+        { id: 'questCombo', kind: 'combo', name: '再连胜 5 次', desc: '今日一局内连对 5 题', target: 5, xp: 8, coins: 15 },
+        { id: 'questDeck', kind: 'deck', name: '碰 6 个新词', desc: '今日遇到 6 个没见过的词', target: 6, xp: 8, coins: 15 }
+      ],
+      /* 常驻条目（每天必出）；其余条目按当日日期确定性轮换（同一天多次进出营地结果不变） */
+      alwaysIds: ['questLogin', 'questAnswer']
+    },
+
+    /* ---- v0.2 随机宝箱（docs/03 §5.9） ----
+       每 3 次连续答对得 1 枚碎片，每日上限 3 枚；3 枚开 1 箱。
+       连续 7 天登录额外白得 1 箱（「每天都来」的直接收益）。
+       概率按 60/32/8 落在普通/稀有/传说，金币 25–70、XP 10–35 —— 与 A8 的经济区间对齐。 */
+    chest: {
+      shardsRequired: 3,
+      shardsPerDay: 3,
+      correctStreakPerShard: 3,
+      loginBonusDays: 7,
+      luckyStreakPerBonus: 7,     // 每日连续答对达到 7 次，额外 +1 枚碎片（当日有效）
+      luckyShardCap: 4,
+      tiers: [
+        { id: 1, name: '普通', weight: 60, coins: 25, xp: 10, icon: '📦' },
+        { id: 2, name: '稀有', weight: 32, coins: 45, xp: 20, icon: '🎁' },
+        { id: 3, name: '传说', weight: 8, coins: 70, xp: 35, icon: '🏆' }
+      ]
+    },
+
+    /* ---- v0.2 错题本重练冷却（docs/03 §4.10） ----
+       冷却随错误次数增长且封顶，实现「错得越多 → 越快能重练」。
+       例：错 1 次 → 1 天；错 2 次 → 2 天；错 3 次 → 3 天；错 4 次 → 4 天；错 6 次 → 6 天。 */
+    reclaim: {
+      maxDays: 7,
+      baseDays: 1
+    },
+
     /* ---- §6.2 存档版本 ---- */
     saveVersion: 1,
 
     /* ---- §7.3 记录裁剪 ---- */
     maxRounds: 500,
-    maxLogEntries: 2000
+    maxLogEntries: 2000,
+    /* v0.2：已中断的对局也记 1 条 RoundRecord（保留收益），但只保留最近若干条，避免存档膨胀 */
+    maxAbortedRounds: 50
   };
 })(window.WQ = window.WQ || {});

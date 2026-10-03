@@ -5,6 +5,33 @@
  *       属性 / innerText / innerHTML / click / focus / 事件冒泡 / MutationObserver /
  *       localStorage / location.hash / matchMedia / performance。
  * 不负责：CSS 布局与绘制（这部分只能在真浏览器里看，已在验收记录里登记为已知限制）。
+ *
+ * ---------------- 存储故障注入（v0.1.1 新增，默认全部关闭） ----------------
+ * 起因：docs/06 §1.3 / §5.3 指出垫片的 localStorage 永不抛错，于是 persist.js 的
+ * 「写盘失败」「配额满裁剪 rounds 后重试」「多标签页 storage 事件」三条分支在 73 条
+ * 自动化断言里不可达。下面 4 个函数把这三类浏览器行为变成可注入的，且**未调用时
+ * localStorage 的行为与旧版逐字节一致**（getItem/setItem/removeItem/clear/key/length 不变）。
+ *
+ *   const env = createEnv({ storage: new Map() });
+ *   env.failWrites({ mode: 'throw' });                     // 之后主存档键写入都抛 QuotaExceededError
+ *   env.failNextWrites(1, { mode: 'quota' });              // 只抛一次，重试（裁剪 rounds 后）会成功
+ *   env.failWrites({ mode: 'silent', match: 'wordquest.save.v1' }); // 接受写入但不改变值
+ *   env.failWrites({ mode: 'throw', match: /^wordquest\./ });       // 正则匹配多个键
+ *   env.store.set('wordquest.save.v1', '{"profile":{}}');
+ *   env.emitStorageEvent('wordquest.save.v1');             // 派发一次真正的 storage 事件（多标签页路径）
+ *   env.reset();                                           // 清掉注入状态 + 清空 store
+ *
+ * 语义：
+ *   failNextWrites(n, o)  之后 n 次命中写入按 o.mode 失败；o 省略 = { mode:'throw', match:null }。
+ *   failWrites(o)         一直失败到 reset()（或 npm/测试自己再注入）；o.mode 默认 'throw'。
+ *   mode = 'throw'        抛 name==='QuotaExceededError' 的 Error（DOMException 风格，带 code=22）。
+ *   mode = 'quota'        同上，但**只抛一次**，第二次写入直接成功 —— 用来验证配额满裁剪重试。
+ *   mode = 'silent'       不抛错也不写入（保留旧值）—— 对应"可读可写却不真正落盘"的浏览器实现。
+ *   match 省略时只命中主存档键 wordquest.save.v1（persist.js 的 K_SAVE）；传字符串 = 精确匹配；
+ *        传 RegExp = 正则匹配。注意：match 若覆盖到 persist.js 的探测键 __wq_probe__，
+ *        storage() 会返回 null（等价"存储不可用"），这属于调用方自己的选择。
+ *   emitStorageEvent(key) 只派发事件、不改 store；要模拟"别的标签页写了档"，先自己
+ *        env.store.set(...) 再 emitStorageEvent(...)。
  */
 
 const VOID_TAGS = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr']);
@@ -470,9 +497,73 @@ export class MutationObserver {
 export function createEnv(opts = {}) {
   const store = opts.storage || new Map();
   const clock = opts.clock || createClock();
+
+  /* ---------- 存储故障注入状态（mode===null 即"未注入"，行为与旧版一致） ---------- */
+  const MAIN_KEY = 'wordquest.save.v1';
+  const faults = { mode: null, match: null, remaining: 0 };
+
+  /** 本次写入是否命中注入（match 省略时只命中主存档键） */
+  function faultHits(key) {
+    if (!faults.mode || faults.remaining <= 0) return false;
+    const k = String(key);
+    const m = faults.match;
+    if (m == null) return k === MAIN_KEY;
+    if (m instanceof RegExp) return new RegExp(m.source, m.flags.replace(/g/g, '')).test(k);
+    return k === String(m);
+  }
+
+  /** 消费一次注入：quota 模式只失败一次（下一次写入放行，用于验证"裁剪后重试"） */
+  function consumeFault() {
+    if (faults.mode === 'quota') { faults.mode = null; faults.remaining = 0; return; }
+    if (faults.remaining !== Infinity) faults.remaining -= 1;
+    if (faults.remaining <= 0) { faults.mode = null; faults.remaining = 0; }
+  }
+
+  /** DOMException 风格的配额错误（persist.js 用 e.name/e.message 里的 quota 判定分支） */
+  function quotaError() {
+    const e = new Error('The quota has been exceeded.（domshim 注入的写入失败）');
+    e.name = 'QuotaExceededError';
+    e.code = 22;
+    return e;
+  }
+
+  /** 让接下来 n 次命中写入按 mode 失败（默认 throw） */
+  function failNextWrites(n, o) {
+    const c = o || {};
+    faults.mode = c.mode || 'throw';
+    faults.match = c.match === undefined ? null : c.match;
+    faults.remaining = Math.max(1, Math.floor(Number(n) || 1));
+    return faults.remaining;
+  }
+
+  /** 持续失败直到 reset()（默认 throw） */
+  function failWrites(o) {
+    const c = o || {};
+    faults.mode = c.mode || 'throw';
+    faults.match = c.match === undefined ? null : c.match;
+    faults.remaining = Infinity;
+    return faults.mode;
+  }
+
+  /** 清掉注入状态与全部存储 */
+  function reset() {
+    faults.mode = null;
+    faults.match = null;
+    faults.remaining = 0;
+    store.clear();
+  }
+
   const localStorage = {
     getItem: (k) => (store.has(k) ? store.get(k) : null),
-    setItem: (k, v) => { store.set(k, String(v)); },
+    setItem: (k, v) => {
+      if (faultHits(k)) {
+        const mode = faults.mode;
+        consumeFault();
+        if (mode === 'silent') return;   // 接受写入但保留旧值（"可读可写却不真正落盘"）
+        throw quotaError();              // throw / quota：抛 name==='QuotaExceededError'
+      }
+      store.set(k, String(v));
+    },
     removeItem: (k) => { store.delete(k); },
     clear: () => store.clear(),
     key: (i) => Array.from(store.keys())[i] ?? null,
@@ -547,5 +638,30 @@ export function createEnv(opts = {}) {
     set(v) { this._title = String(v); }
   });
 
-  return { window: win, document: doc, localStorage, store, app, toastRoot, overlayRoot, clock };
+  /**
+   * 派发一次真正的 storage 事件到 window 监听器（不改 store）。
+   * 用途：persist.onStorage → bus 'storageExternal' → main.js 的多标签提示这条链路
+   * 在没有真浏览器、垫片也不派发事件的条件下变得可测（docs/06 §1.3 / §8.5）。
+   * @param {string} [key] 省略 = 主存档键 wordquest.save.v1
+   * @returns {object} 派发出去的事件对象（便于断言 key/newValue）
+   */
+  function emitStorageEvent(key) {
+    const k = key == null ? MAIN_KEY : String(key);
+    const evt = {
+      type: 'storage',
+      key: k,
+      oldValue: null,
+      newValue: store.has(k) ? store.get(k) : null,
+      storageArea: localStorage,
+      url: win.location.href
+    };
+    win._dispatchWindow('storage', evt);
+    return evt;
+  }
+
+  return {
+    window: win, document: doc, localStorage, store, app, toastRoot, overlayRoot, clock,
+    /* 故障注入 / 多标签事件（默认未注入；API 说明见文件头） */
+    faults, failNextWrites, failWrites, emitStorageEvent, reset
+  };
 }

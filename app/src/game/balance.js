@@ -26,6 +26,38 @@
     else list.push(item(key, label, value, unit));
   }
 
+  /** 金币明细行（与 XP 行分开，便于结算页显示「金币」单位） */
+  function pushCoin(list, key, label, value) {
+    pushItem(list, key, label, value, 'coin');
+  }
+
+  /**
+   * 未完成局（中途退出 / 刷新补结算）允许解锁的徽章白名单。
+   *
+   * 为什么需要它：中断局要保留收益，就不能把整条结算路径砍掉；但它没有"完成一局"这个事实，
+   * 所以「首次通关 / 无伤 / 百发百中 / 挥金如土」这类**必须由一个完整结果触发**的徽章一律不发。
+   * 其余靠累计量（总答对数、等级、累计消费）的徽章在中断局里照常判定，避免收益被无谓卡住。
+   * 另外 B8/B9（早起鸟 / 夜猫子）由「完成一局」定义，中断局不参与判定。
+   */
+  const ABORT_SAFE_BADGES = {
+    firstBlood: true,
+    hundredWords: true,
+    veteranHunter: true,
+    hunterLeader: true,
+    bigSpender: true,
+    maxHunter: true
+  };
+
+  function filterUnlockedForAbort(unlocked) {
+    const kept = (unlocked || []).filter(function (b) { return !!(b && ABORT_SAFE_BADGES[b.id]); });
+    const dropped = (unlocked || []).filter(function (b) { return !(b && ABORT_SAFE_BADGES[b.id]); });
+    if (dropped.length) {
+      /* 理论上不会发生：checkAchievements 只按传入的白名单判定。留作防御与日志。 */
+      WQ.log.warn('中断局拦下了不应解锁的徽章：' + dropped.map(function (b) { return b.id; }).join(','));
+    }
+    return { unlocked: kept, dropped: dropped };
+  }
+
   /**
    * 连击档位奖励（档位制，每档每局仅一次，docs/03 §5.4）。
    * @param {object} session 需要 comboTiersHit
@@ -98,9 +130,21 @@
     if (!session || !q) return result;
 
     if (!session.progressMap) session.progressMap = Object.create(null);
-    const before = session.progressMap[q.wordId]
-      ? U.deepClone(session.progressMap[q.wordId])
-      : WQ.save.defaultProgress(q.wordId);
+    if (!session.progressAnswered) session.progressAnswered = Object.create(null);
+
+    /* v0.2 修 D-new：`before` 必须以**存档里的持久进度**为基准，而不是每局新建的 session.progressMap。
+       否则 words 的 seenCount / correctCount 每局都从 0 开始 →「新词首答 +5」「击败新词 +5」每局重发，
+       单局 XP 被系统性抬高（这也是 docs/06 把 285 归因于"PRD 算术错误"时漏掉的一半原因）。
+       同一局内第一次作答该词时用存档值做基准，之后沿用本局已累计的 session 值（重试也走这条路径）。 */
+    const base = WQ.save.defaultProgress(q.wordId);
+    let before;
+    if (!session.progressAnswered[q.wordId]) {
+      const persisted = (save.progress && save.progress[q.wordId]) || null;
+      before = Object.assign(base, persisted ? U.deepClone(persisted) : {});
+      session.progressAnswered[q.wordId] = true;
+    } else {
+      before = Object.assign(base, session.progressMap[q.wordId] ? U.deepClone(session.progressMap[q.wordId]) : {});
+    }
     /* 作答前的原始计数（必须先取出：srs.applyCorrect 会就地修改 before） */
     const wasNewWord = (Number(before.seenCount) || 0) === 0;
     const wasUndefeated = (Number(before.correctCount) || 0) === 0;
@@ -222,18 +266,28 @@
       return { applied: false, save: save, roundRecord: existed, levelUps: [], unlocked: [] };
     }
 
+    /* ---- 中断局判定（docs/06 D2）----
+       未完成就退出的局：保留全部已得收益与词进度，但
+         · isWin = false（不再把它当成"完成局"）
+         · 不写 daily.todayFirstRoundDone（每日首局奖励留给今天真正的第一局）
+         · 不进 stats.totalRounds / daily.todayRounds / 徽章的"完成类"判定
+       旧版存档里没有 aborted 标记的中断会话，用「血量未归零且没答完全部题」反推。 */
+    const answeredTotal = (Number(session.correct) || 0) + (Number(session.wrong) || 0) + (Number(session.skipped) || 0);
+    const incomplete = (Number(session.hpLeft) || 0) > 0 && answeredTotal < (Number(session.totalQuestions) || 0);
+    const isAborted = session.aborted === true || (session.aborted == null && incomplete);
+    const isCompletedRun = !isAborted && answeredTotal >= (Number(session.totalQuestions) || 0);
+
     const nowDate = now instanceof Date ? now : new Date(Number(now) || Date.now());
     const levelBefore = Number(save.profile.level) || 1;
-    const balanceBefore = { level: levelBefore, xp: Number(save.profile.xp) || 0 };
+    const xpBaseline = Number(save.profile.xp) || 0;   // 结算前等级内的 XP（结算页 XP 条起点）
 
     /* ---- 完美局 / 每日首局（放在 session 上，明细与金币都要用） ---- */
     const perfectXp = applyPerfectBonus(session);
-    const daily = applyDailyFirstBonus(session);
+    const dailyBonus = isAborted ? { xp: 0, coins: 0 } : applyDailyFirstBonus(session);
 
     /* ---- 本局"对局本体"收益（不含徽章与升级奖励，口径见 docs/03 §5.1 上限构造） ---- */
-    const xpGained = (Number(session.xpGained) || 0) + perfectXp + daily.xp;
-    const coinsGained = (Number(session.coinsGained) || 0) + B.coins.roundEnd + daily.coins + (perfectXp ? B.coins.perfect : 0);
-    const xpBaseline = Number(save.profile.xp) || 0; // 结算前等级内的 XP（结算页 XP 条起点）
+    const xpGained = (Number(session.xpGained) || 0) + perfectXp + dailyBonus.xp;
+    const coinsGained = (Number(session.coinsGained) || 0) + B.coins.roundEnd + dailyBonus.coins + (perfectXp ? B.coins.perfect : 0);
 
     /* ---- 汇总 breakdown（结算页逐行展示） ---- */
     const breakdown = [];
@@ -242,33 +296,51 @@
       pushItem(breakdown, b.key, b.label, b.value, b.unit);
     });
     if (perfectXp) pushItem(breakdown, 'perfect', '完美局', perfectXp, 'xp');
-    if (daily.xp) pushItem(breakdown, 'dailyFirst', '每日首局', daily.xp, 'xp');
+    if (dailyBonus.xp) pushItem(breakdown, 'dailyFirst', '每日首局', dailyBonus.xp, 'xp');
     /* 结算金币（单独成行，单位 coin） */
-    pushItem(breakdown, 'roundEnd', '结算奖励', B.coins.roundEnd, 'coin');
-    if (daily.coins) pushItem(breakdown, 'dailyFirstCoin', '每日首局', daily.coins, 'coin');
-    if (perfectXp) pushItem(breakdown, 'perfectCoin', '完美局', B.coins.perfect, 'coin');
+    pushCoin(breakdown, 'roundEnd', '结算奖励', B.coins.roundEnd);
+    if (dailyBonus.coins) pushCoin(breakdown, 'dailyFirstCoin', '每日首局', dailyBonus.coins);
+    if (perfectXp) pushCoin(breakdown, 'perfectCoin', '完美局', B.coins.perfect);
 
     /* ---- 写 profile 的 XP 部分 ---- */
     save.profile.xp = (Number(save.profile.xp) || 0) + xpGained;
     save.profile.totalXp = (Number(save.profile.totalXp) || 0) + xpGained;
 
-    /* ---- 词库进度落库 + 掌握度缓存刷新 ---- */
+    /* ---- 本局「对局本体」的升级结算 ----
+       必须紧跟在 xpGained 入账之后：否则后面的每日任务/宝箱也会往 profile.xp 里加 XP，
+       而这些 XP 可能先把等级顶上去，最终这段"对局本体 XP"反而被升级逻辑吞掉，
+       造成「档内 XP 增量 ≠ 本局本体育量」的账目不一致（v0.2 修正）。
+       升级金币不在这里入账（applyLevelUps 默认不写 coins），只记进明细，由下面的总账统一写。 */
+    const lv = WQ.level.applyLevelUps(save.profile);
+    const levelAfterRound = Number(save.profile.level) || levelBefore;
+    if (lv.coinsFromLevels) pushCoin(breakdown, 'levelUp', '升级奖励（' + lv.levelUps.length + ' 级）', lv.coinsFromLevels);
+
+    /* ---- 词库进度落库 ----
+       只落"本局实际作答过的词"（作答过的词都在 session.log 里），避免每局全量深拷贝 progressMap
+       （500 局历史下这是 O(词库 × 历史局数) 的开销）。 */
+    const answeredIds = Object.create(null);
+    (Array.isArray(session.log) ? session.log : []).forEach(function (l) {
+      if (l && l.wordId) answeredIds[l.wordId] = true;
+    });
     if (session.progressMap) {
       Object.keys(session.progressMap).forEach(function (id) {
+        if (!answeredIds[id]) return;
         const p = WQ.srs.refreshMastery(session.progressMap[id]);
         save.progress[id] = p;
       });
     }
 
     const todayKey = session.startedDate || U.todayKey(nowDate);
-    const isWin = (Number(session.hpLeft) || 0) > 0;
+    const isWin = !isAborted && (Number(session.hpLeft) || 0) > 0;
     const totalQuestions = Number(session.totalQuestions) || 0;
     const isPerfect = perfectXp > 0;
     const log = Array.isArray(session.log) ? session.log.slice() : [];
 
-    /* ---- stats 累加 ---- */
+    /* ---- stats 累加 ----
+       中断局照常累计题数与正确数（收益要保留、正确率要真实），
+       但 totalRounds 表示"完成局数"，中断局不计入。 */
     const st = save.stats;
-    st.totalRounds += 1;
+    if (!isAborted) st.totalRounds += 1;
     st.totalQuestions += totalQuestions;
     st.totalCorrect += Number(session.correct) || 0;
     st.totalWrong += Number(session.wrong) || 0;
@@ -283,6 +355,11 @@
     let coinsEarnedThisRound = coinsGained;
     st.coinsEarned += coinsEarnedThisRound;
 
+    /* 注意：这里只加"本局本体"金币。
+       徽章金币与任务/宝箱金币在各自的发奖点已经加过 stats.coinsEarned
+       （achievements.js 的 checkAchievements、quest.grant、chest.open），
+       升级金币与徽章金币在下方一起补，避免重复计数（v0.2 修正）。 */
+
     /* 每日聚合（按开局日期计入，docs/03 §7.1） */
     if (!st.daily[todayKey]) {
       st.daily[todayKey] = { questions: 0, correct: 0, wrong: 0, xp: 0, coins: 0, rounds: 0, studyMs: 0 };
@@ -293,7 +370,7 @@
     day.wrong += Number(session.wrong) || 0;
     day.xp += xpGained;
     day.coins += coinsEarnedThisRound;
-    day.rounds += 1;
+    if (!isAborted) day.rounds += 1;   /* 每日曲线的"局数"只数完成局 */
     day.studyMs += durationMs;
 
     /* 题型聚合（每次判定累加，见 recordAnswerAggregates） */
@@ -312,49 +389,124 @@
       return WQ.srs.isMastered(save.progress[id]);
     }).length;
 
-    /* ---- daily 状态 ---- */
-    save.daily.todayRounds += 1;
-    save.daily.todayCorrect += Number(session.correct) || 0;
-    save.daily.todayWrong += Number(session.wrong) || 0;
-    save.daily.todayXp += xpGained;
-    save.daily.todayCoins += coinsEarnedThisRound;
-    if (isWin) save.daily.todayFirstRoundDone = true;
+    /* ---- daily 状态 ----
+       todayRounds / todayFirstRoundDone 只对"完成的局"生效（修 D2）；
+       todayAttempts 单独记中断局，供统计与调试查看。 */
+    save.daily.todayAttempts = (Number(save.daily.todayAttempts) || 0) + 1;
+    if (!isAborted) {
+      save.daily.todayRounds = (Number(save.daily.todayRounds) || 0) + 1;
+      if (isWin) save.daily.todayFirstRoundDone = true;
+    }
+    save.daily.todayCorrect = (Number(save.daily.todayCorrect) || 0) + (Number(session.correct) || 0);
+    save.daily.todayWrong = (Number(save.daily.todayWrong) || 0) + (Number(session.wrong) || 0);
+    save.daily.todayXp = (Number(save.daily.todayXp) || 0) + xpGained;
+    save.daily.todayCoins = (Number(save.daily.todayCoins) || 0) + coinsEarnedThisRound;
 
-    /* ---- streak（结算分支，docs/03 §4.7） ---- */
-    const streakRes = WQ.streak.settleOnRoundEnd(save, nowDate) || {};
+    /* ---- streak（结算分支，docs/03 §4.7；中断局不计入签到） ---- */
+    const streakRes = isAborted ? { stage: 'aborted', changed: false } : (WQ.streak.settleOnRoundEnd(save, nowDate) || {});
 
-    /* ---- 徽章（结算批量判定，B1→B11；可能额外发 XP 与金币） ---- */
-    const achRes = WQ.ach.checkAchievements(save, nowDate, {
+    /* ---- 每日任务推进 + 宝箱碎片（v0.2，docs/03 §5.9） ----
+       quest.settle() 只返回"应发的金币/XP"，不直接改 profile —— 由下面统一入账，
+       保证 profile 的增量能被 RoundRecord 的明细行精确对账。 */
+    const questReward = { coins: 0, xp: 0, completed: [], bonus: false };
+    if (WQ.quest) {
+      WQ.quest.advance(save, {
+        roundId: session.roundId,
+        aborted: isAborted,
+        maxCombo: Number(session.maxCombo) || 0,
+        isPerfect: isPerfect && isCompletedRun,
+        /* 错题本重练：本局答对的词算「重练打回来」（徽章 B13） */
+        reclaimed: session.reclaim ? (Number(session.correct) || 0) : 0
+      });
+      const q = WQ.quest.settle(save, nowDate) || {};
+      questReward.coins = Number(q.coinGain) || 0;
+      questReward.xp = Number(q.xpGain) || 0;
+      questReward.completed = q.completed || [];
+      questReward.bonus = !!q.bonus;
+      if (questReward.coins) st.coinsEarned += questReward.coins;   // 统计口径，不算进 profile（总账里统一写）
+      if (questReward.xp) {
+        /* 任务 XP 也不直接进 profile：它要参与 totalXp 和升级队列，由总账统一入账 */
+      }
+    }
+    const questCoins = questReward.coins;
+    const questXp = questReward.xp;
+    if (questCoins) pushCoin(breakdown, 'quest', '每日任务', questCoins);
+    if (questXp) pushItem(breakdown, 'questXp', '每日任务经验', questXp, 'xp');
+    /* 宝箱碎片随今日连续答对增长（每日上限内） */
+    if (WQ.chest) WQ.chest.syncShards(save, nowDate);
+
+    /* ---- 徽章（结算批量判定）；中断局只允许"累计量类"徽章解锁 ---- */
+    /* unlockedBefore 必须取 def.id：getAllProgress() 返回的是 { def, progress, target, text, unlocked, unlockedAt }，
+       没有顶层 id 字段（v0.2 修：这里写成 x.id 会让 indexOf 永远命中不到，
+       导致 questUnlocked 退化成"全部已解锁徽章"，把旧徽章奖励每局重发一次）。 */
+    const unlockedBefore = WQ.ach.getAllProgress(save)
+      .filter(function (x) { return x.unlocked && x.def; })
+      .map(function (x) { return x.def.id; });
+    const achCtx = {
       maxCombo: session.maxCombo,
       isPerfect: isPerfect,
       masteredCount: st.masteredCount,
       level: save.profile.level
-    });
-    const badgeCoins = achRes.unlocked.reduce(function (a, b) { return a + (b.coinReward || 0); }, 0);
-    const badgeXp = achRes.unlocked.reduce(function (a, b) { return a + (b.xpReward || 0); }, 0);
-    if (badgeCoins) pushItem(breakdown, 'badge', '徽章 ×' + achRes.unlocked.length, badgeCoins, 'coin');
+    };
+    if (isAborted) achCtx.allowIds = ABORT_SAFE_BADGES;
+    /* deferAward：徽章奖励不在这里写 profile，交给总账统一入账（避免与 earnedCoins 重复） */
+    achCtx.deferAward = true;
+    const achRes = WQ.ach.checkAchievements(save, nowDate, achCtx);
+    /* 任务/宝箱在上一段就可能当场解锁 B12–B14（它们的 checkOn 分别是 quest/chest/reclaim）：
+       这里把"任务结算前后新解锁的"补进本局明细，结算页的「新解锁徽章」块才完整。 */
+    const questUnlocked = WQ.ach.getAllProgress(save)
+      .filter(function (x) { return x.unlocked && x.def && unlockedBefore.indexOf(x.def.id) < 0; })
+      .filter(function (x) { return achRes.unlocked.every(function (b) { return b.id !== x.def.id; }); })
+      .map(function (x) { return x.def; });
+    const allUnlocked = achRes.unlocked.concat(questUnlocked);
+    const badgeCoins = allUnlocked.reduce(function (a, b) { return a + (b.coinReward || 0); }, 0);
+    const badgeXp = allUnlocked.reduce(function (a, b) { return a + (b.xpReward || 0); }, 0);
+    if (badgeCoins) pushCoin(breakdown, 'badge', '徽章 ×' + allUnlocked.length, badgeCoins);
 
-    /* ---- 升级结算（放在最后，这样徽章发的 XP 也能参与升级） ---- */
-    const lv = WQ.level.applyLevelUps(save.profile);
-    if (lv.coinsFromLevels) pushItem(breakdown, 'levelUp', '升级奖励（' + lv.levelUps.length + ' 级）', lv.coinsFromLevels, 'coin');
+    /* ---- 任务/宝箱 XP 之后再滚一次升级（它们也可能顶上一级） ---- */
+    const lv2 = WQ.level.applyLevelUps(save.profile);
+    const levelUps = lv.levelUps.concat(lv2.levelUps);
+    if (lv2.coinsFromLevels) pushCoin(breakdown, 'levelUp2', '任务/徽章经验升级', lv2.coinsFromLevels);
 
     /* ---- 徽章 XP 明细行 ---- */
     if (badgeXp) pushItem(breakdown, 'badgeXp', '徽章经验', badgeXp, 'xp');
 
-    /* ---- 金币/XP 最终账目 ----
-       定稿：roundRecord.xpGained 严格落在 10–215、coinsGained 落在 0–71（docs/03 §5.1 上限构造口径）。
-       徽章奖励与升级奖励单独记在 bonusXp / bonusCoins / levelUpCoins 里，三项之和才是本局总入账。 */
-    const bonusCoins = badgeCoins + lv.coinsFromLevels;
-    const levelUpCoins = lv.coinsFromLevels;
-    const earnedCoins = coinsGained + bonusCoins;
+    /* ---- 金币/XP 最终账目（v0.2：profile 只在这里被写一次，其余都是"记账"） ----
+       定稿：roundRecord.xpGained 只含"对局本体"（基础分 + 新词 + 连击 + 完美局 + 每日首局），
+       roundRecord.coinsGained 同理。其余来源分别单列，全部相加 = 本局总入账：
+         xpGained + bonusXp（徽章 XP）+ questXp（任务 XP）
+         coinsGained + badgeCoins + levelUpCoins + questCoins
+       因此「明细行逐行相加 === 档内增量」这个不变量可以自动断言。 */
+    const bonusXp = badgeXp;
+    let levelUpCoins = lv.coinsFromLevels + lv2.coinsFromLevels;
+    /* 对局本体的 XP 前面已经入账，这里只补"非本体的"部分，避免重复 */
+    const extraXp = bonusXp + questXp;
+    if (extraXp) {
+      save.profile.xp = (Number(save.profile.xp) || 0) + extraXp;
+      save.profile.totalXp = (Number(save.profile.totalXp) || 0) + extraXp;
+      /* 这些 XP 可能还会顶上一级 → 再滚一次升级队列（金币也要一起计入总额，否则账会短 30/次） */
+      const lv3 = WQ.level.applyLevelUps(save.profile);
+      if (lv3.levelUps.length) {
+        lv2.levelUps = lv2.levelUps.concat(lv3.levelUps);
+        if (lv3.coinsFromLevels) {
+          pushCoin(breakdown, 'levelUp3', '经验溢出升级', lv3.coinsFromLevels);
+          levelUpCoins += lv3.coinsFromLevels;
+        }
+      }
+    }
+    const bonusCoins = badgeCoins + levelUpCoins;
+    const earnedCoins = coinsGained + bonusCoins + questCoins;
     save.profile.coins = (Number(save.profile.coins) || 0) + earnedCoins;
+    /* 统计口径：金币来源里只有"升级金币"还没有进过 coinsEarned
+       （徽章由 checkAchievements、任务由 quest.settle 的记账点各自计入，本体金币在上面已计入） */
+    st.coinsEarned += levelUpCoins;
 
-    /* 把徽章/升级带来的金币同步进"本局入账"与每日聚合（展示与统计要一致） */
-    if (bonusCoins) {
-      coinsEarnedThisRound += bonusCoins;
-      st.coinsEarned += bonusCoins;
-      day.coins += bonusCoins;
-      save.daily.todayCoins += bonusCoins;
+    /* day.coins / daily.todayCoins 是"本局总入账"，因此加全额 extraCoins */
+    const extraCoins = bonusCoins + questCoins;
+    if (extraCoins) {
+      coinsEarnedThisRound += extraCoins;
+      day.coins += extraCoins;
+      save.daily.todayCoins += extraCoins;
     }
 
     /* ---- RoundRecord（字段照 docs/03 §6.8） ---- */
@@ -365,6 +517,8 @@
       durationMs: durationMs,
       isWin: isWin,
       isPerfect: isPerfect,
+      /* v0.2（D2）：中断局单独标记，结算页与统计可以区分「完成」与「中途退出」 */
+      aborted: isAborted,
       isFirstRoundToday: !!session.isFirstRoundToday,
       totalQuestions: totalQuestions,
       correct: Number(session.correct) || 0,
@@ -375,9 +529,15 @@
       coinsGained: coinsGained,
       endedXp: save.profile.xp,
       endedTotalXp: save.profile.totalXp,
+      /* v0.2：bonusXp 只含徽章 XP；每日任务 XP 单列在 questXp（结算页会把两者都算进合计） */
       bonusXp: badgeXp,
       bonusCoins: bonusCoins,
       levelUpCoins: levelUpCoins,
+      /* v0.2：每日任务/宝箱的入账单列，保证「明细逐行相加 === 顶部合计」 */
+      questXp: questXp,
+      questCoins: questCoins,
+      extraXp: badgeXp + questXp,
+      extraCoins: bonusCoins + questCoins,
       levelBefore: levelBefore,
       levelAfter: Number(save.profile.level) || levelBefore,
       hpMax: Number(session.hpMax) || B.hp.max,
@@ -388,10 +548,10 @@
       wordIds: (session.questions || []).map(function (q) { return q.wordId; }),
       breakdown: breakdown,
       log: log,
-      unlockedAchievementIds: achRes.unlocked.map(function (b) { return b.id; }),
+      unlockedAchievementIds: allUnlocked.map(function (b) { return b.id; }),
       source: session.source === 'wrongBook' ? 'wrongBook' : 'normal',
       /* 便于结算页展示的附加字段（不改变上游语义） */
-      levelUps: lv.levelUps,
+      levelUps: levelUps,
       accuracy: totalQuestions ? (Number(session.correct) || 0) / totalQuestions : 0
     };
 
@@ -401,6 +561,7 @@
     WQ.log.add('roundEnd', {
       roundId: roundRecord.roundId,
       isWin: roundRecord.isWin,
+      aborted: roundRecord.aborted,
       isPerfect: roundRecord.isPerfect,
       correct: roundRecord.correct,
       wrong: roundRecord.wrong,
@@ -408,6 +569,8 @@
       maxCombo: roundRecord.maxCombo,
       xpGained: roundRecord.xpGained,
       coinsGained: roundRecord.coinsGained,
+      questXp: questXp,
+      questCoins: questCoins,
       durationMs: roundRecord.durationMs,
       levelBefore: roundRecord.levelBefore,
       levelAfter: roundRecord.levelAfter
@@ -417,41 +580,49 @@
       applied: true,
       save: save,
       roundRecord: roundRecord,
-      levelUps: lv.levelUps,
+      levelUps: levelUps,
       unlocked: achRes.unlocked,
       streak: streakRes,
+      aborted: isAborted,
       /* 结算页 XP 条动画的起点：结算前等级内的 XP */
       baseline: { level: levelBefore, xp: xpBaseline },
-      dailyFirstEligible: daily.xp > 0,
+      dailyFirstEligible: dailyBonus.xp > 0,
       totals: {
-        xp: xpGained + badgeXp,
+        xp: xpGained + badgeXp + questXp,
         coins: earnedCoins,
         badgeXp: badgeXp,
         badgeCoins: badgeCoins,
-        levelUpCoins: levelUpCoins
+        levelUpCoins: levelUpCoins,
+        questXp: questXp,
+        questCoins: questCoins
       }
     };
   }
 
   /**
    * 跨天结算（docs/03 §4.3 rolloverDaily）：
-   * 重置每日标志与限购、跨月重置月度计数、结清 streak。
+   * 重置每日标志与限购、跨月重置月度计数、结清 streak、结算每日任务与宝箱。
+   *
+   * v0.2：这里成为「跨天唯一入口」——无论从启动、进营地还是开局前调用，结果都一致（幂等）。
    */
   function rolloverDaily(save, now) {
     if (!save) return save;
     const nowDate = now instanceof Date ? now : new Date(Number(now) || Date.now());
     const today = U.todayKey(nowDate);
     const month = U.ymKey(nowDate);
+    let rolled = false;
 
     if (save.daily.todayDate !== today) {
       save.daily.todayDate = today;
       save.daily.todayFirstRoundDone = false;
       save.daily.todayRounds = 0;
+      save.daily.todayAttempts = 0;
       save.daily.todayCorrect = 0;
       save.daily.todayWrong = 0;
       save.daily.todayXp = 0;
       save.daily.todayCoins = 0;
       save.daily.shopDailyCount = {};
+      rolled = true;
     }
     if (save.daily.shopMonthKey !== month) {
       save.daily.shopMonthKey = month;
@@ -459,6 +630,13 @@
     }
     WQ.streak.rolloverMonth(save, nowDate);
     WQ.streak.rolloverStreak(save, nowDate);
+
+    /* 每日任务 + 宝箱的跨天结算（v0.2，内部按日期键幂等） */
+    if (WQ.quest) {
+      const q = WQ.quest.settle(save, nowDate);
+      if (q && q.newDay) rolled = true;
+    }
+    save.daily.rolled = rolled;
     return save;
   }
 

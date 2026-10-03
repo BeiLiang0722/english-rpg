@@ -67,6 +67,7 @@
    *   save       存档（只读）
    *   words      词库原始数组（WQ.WORDS）
    *   source     'normal' | 'wrongBook'
+   *   wordIds    可选：只从这些 id 里选词（v0.2 错题本「重练某个词 / 只重练到冷却的词」）
    *   now        Date | number
    *   rnd        function 随机数发生器
    *   limit      题数上限，默认 B.round.questionCount
@@ -82,6 +83,10 @@
     const limit = Math.max(1, Math.floor(Number(o.limit) || B.round.questionCount));
     const source = o.source === 'wrongBook' ? 'wrongBook' : 'normal';
     const tts = o.ttsAvailable !== false;
+    /* v0.2：限定选词集合（错题本重练用） */
+    const allowIds = Array.isArray(o.wordIds) && o.wordIds.length
+      ? o.wordIds.reduce(function (a, id) { a[String(id)] = true; return a; }, Object.create(null))
+      : null;
 
     const deck = entriesOf(words);
     const entries = deck; // 干扰项从整册词库取（用于凑选项），选词只从优先候选取
@@ -114,6 +119,10 @@
           || (String(pb.lastWrongAt || '').localeCompare(String(pa.lastWrongAt || '')))
           || String(a.entry.id).localeCompare(String(b.entry.id));
       });
+    }
+    /* v0.2：再按 allowIds 收窄（重练集合） */
+    if (allowIds) {
+      ranked = ranked.filter(function (s) { return !!allowIds[s.entry.id]; });
     }
 
     /* 候选池：普通局取上限内的高优先词（按优先级依次下探补齐）；错词局取全部错词 */
@@ -187,10 +196,44 @@
     };
   }
 
+  /**
+   * v0.2 侦查之眼（修验收报告 D4）：给当前题目算一个「被排除的选项下标」。
+   *
+   * 真实影响出题与渲染：
+   *   · 每道选择题只在**首次渲染时**算一次并写回 question.scoutExcludedIndex（对象是引用，会随会话落盘）；
+   *   · 之后无论重新渲染多少次都是同一个下标，不会让玩家刷新出「换一个被排除项」；
+   *   · 从所有错误项里按 question.wordId + 剩余额度做确定性哈希选一个，保证可复现（自检可断言）。
+   *
+   * @param {object} q 题目
+   * @param {object} session 会话（只读 scoutEyeRemaining / scoutEyeUsed）
+   * @returns {number} 被排除的选项下标；不适用时返回 -1
+   */
+  function scoutExcludeIndex(q, session) {
+    if (!q || !session) return -1;
+    if (q.type !== 'Q1' && q.type !== 'Q2' && q.type !== 'Q4') return -1;
+    if (q.scoutExcludedIndex != null) return Number(q.scoutExcludedIndex);
+    if (!(Number(session.scoutEyeRemaining) > 0)) return -1;
+    if (session.judged) return -1;
+    const opts = q.options || [];
+    const wrongs = [];
+    for (let i = 0; i < opts.length; i++) {
+      if (!opts[i].correct) wrongs.push(i);
+    }
+    if (!wrongs.length) return -1;
+    const key = String(q.wordId || '');
+    let hash = 0;
+    for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) % 100000;
+    hash += (Number(session.scoutEyeUsed) || 0) * 17;
+    const idx = wrongs[hash % wrongs.length];
+    q.scoutExcludedIndex = idx;
+    return idx;
+  }
+
   WQ.questionPool = {
     priorityOf: priorityOf,
     candidatePoolSize: candidatePoolSize,
     buildRound: buildRound,
-    entriesOf: entriesOf
+    entriesOf: entriesOf,
+    scoutExcludeIndex: scoutExcludeIndex
   };
 })(window.WQ = window.WQ || {});

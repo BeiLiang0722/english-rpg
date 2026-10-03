@@ -64,15 +64,24 @@
   }
 
   /**
-   * 结算时批量判定。按 B1→B11 顺序返回本次新解锁数组并就地写入 save。
+   * 结算时批量判定。按定义顺序返回本次新解锁数组并就地写入 save.achievements。
+   *
+   * 奖励发放口径（v0.2 收敛为"单点写入"）：
+   *   · 默认（`ctx.deferAward` 不为真）如旧：就地写 profile.coins / profile.xp / stats.coinsEarned。
+   *   · `ctx.deferAward === true` 时**不写任何 profile 字段**，只把应发的金币/XP 放进返回值的 award，
+   *     由调用方在自己的同一笔账里统一入账。
+   *   为什么要这个开关：applyRoundEnd 的账目里已经按"会话本体 + 明细行"算好了总额，
+   *   如果徽章/升级再各自偷偷改一次 profile.coins，账就对不上（v0.2 修的一个真实脏账）。
+   *
    * @param {object} save 存档（就地修改）
    * @param {Date|number} now
-   * @param {object} ctx { maxCombo, isPerfect, masteredCount, level }
-   * @returns {{save:object, unlocked:Array}}
+   * @param {object} ctx { maxCombo, isPerfect, masteredCount, level, allowIds, deferAward }
+   * @returns {{save:object, unlocked:Array, award:{coins:number, xp:number}}}
    */
   function checkAchievements(save, now, ctx) {
     const unlocked = [];
-    if (!save) return { save: save, unlocked: unlocked };
+    const award = { coins: 0, xp: 0 };
+    if (!save) return { save: save, unlocked: unlocked, award: award };
     if (!save.achievements || typeof save.achievements !== 'object') save.achievements = {};
 
     const counts = timeBasedCounts(save);
@@ -82,10 +91,14 @@
       masteredCount: save.stats ? save.stats.masteredCount : 0,
       level: save.profile ? save.profile.level : 1
     }, ctx || {}, counts);
+    const defer = !!(ctx && ctx.deferAward);
 
     const at = (now instanceof Date ? now : new Date(Number(now) || Date.now())).toISOString();
+    /* ctx.allowIds：只允许判定这些徽章（用于"中断局不得解锁完成类徽章"，docs/06 D2） */
+    const allowIds = (ctx && ctx.allowIds && typeof ctx.allowIds === 'object') ? ctx.allowIds : null;
 
     WQ.achievements.forEach(function (def) {
+      if (allowIds && !allowIds[def.id]) return;
       const exist = save.achievements[def.id];
       if (exist && exist.unlocked) return; // 解锁不可逆
 
@@ -99,17 +112,24 @@
         progress: def.target,
         bestProgress: def.target
       };
-      save.profile.coins = (Number(save.profile.coins) || 0) + (def.coinReward || 0);
-      if (def.xpReward) {
-        save.profile.xp = (Number(save.profile.xp) || 0) + def.xpReward;
-        save.profile.totalXp = (Number(save.profile.totalXp) || 0) + def.xpReward;
+      const c = def.coinReward || 0;
+      const x = def.xpReward || 0;
+      if (defer) {
+        award.coins += c;
+        award.xp += x;
+      } else {
+        save.profile.coins = (Number(save.profile.coins) || 0) + c;
+        if (x) {
+          save.profile.xp = (Number(save.profile.xp) || 0) + x;
+          save.profile.totalXp = (Number(save.profile.totalXp) || 0) + x;
+        }
+        if (save.stats) save.stats.coinsEarned = (Number(save.stats.coinsEarned) || 0) + c;
       }
-      if (save.stats) save.stats.coinsEarned = (Number(save.stats.coinsEarned) || 0) + (def.coinReward || 0);
       unlocked.push({ id: def.id, name: def.name, icon: def.icon, desc: def.desc, coinReward: def.coinReward, xpReward: def.xpReward });
-      WQ.log.add('achievementUnlock', { achievementId: def.id, at: at });
+      WQ.log.add('achievementUnlock', { achievementId: def.id, at: at, deferred: defer });
     });
 
-    return { save: save, unlocked: unlocked };
+    return { save: save, unlocked: unlocked, award: award };
   }
 
   WQ.ach = {
