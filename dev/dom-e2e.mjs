@@ -14,7 +14,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createEnv } from './domshim.mjs';
+import { createEnv, DomEvent } from './domshim.mjs';
 
 const DEV_DIR = path.dirname(fileURLToPath(import.meta.url));
 const APP = path.resolve(DEV_DIR, '..', 'app');
@@ -168,8 +168,16 @@ const go = (h) => { page.env.window.location.hash = h; page.pump(400); };
 
 log('加载 app/index.html 的全部脚本', FILES.length + ' 个文件，' + page.errors.length + ' 个加载错误', page.errors.length === 0);
 if (page.errors.length) log('加载错误明细', page.errors.join(' | '), false);
-log('词库条数', WQ.WORDS.length, WQ.WORDS.length === 200);
-log('词库四字段非空', String(WQ.WORDS.filter((w) => w.word && w.phonetic && w.meaning_cn && w.example).length), WQ.WORDS.filter((w) => w.word && w.phonetic && w.meaning_cn && w.example).length === 200);
+/* 词库口径（v0.3 扩容后）：不再断言具体条数，改为覆盖率门槛，与 dev/check-words.mjs 一致 */
+log('词库条数 ≥ 5800', WQ.WORDS.length, WQ.WORDS.length >= 5800);
+{
+  const n = WQ.WORDS.length;
+  const phon = WQ.WORDS.filter((w) => w.phonetic).length;
+  const ex = WQ.WORDS.filter((w) => w.example).length;
+  const core = WQ.WORDS.filter((w) => w.id && w.word && w.meaning_cn).length;
+  log('词库覆盖率', 'phonetic=' + phon + ' example=' + ex + ' 核心字段=' + core,
+    phon / n >= 0.95 && ex / n >= 0.9 && core === n);
+}
 
 /* ---------- 1. 冷启动 → 营地 ---------- */
 page.pump(1200);
@@ -392,6 +400,42 @@ for (const [tab, kw] of [['level', '徽章墙'], ['wrong', '错题本|待复活'
 go('#/growth?tab=level');
 log('徽章墙格数 === 徽章定义数', String(WQ.ach.getAllProgress(WQ.state.save).length),
   WQ.ach.getAllProgress(WQ.state.save).length === WQ.achievements.length);
+
+/* ---------- 11b. 词库总览的按需渲染（v0.3：5800+ 词不能整册渲染） ---------- */
+go('#/growth?tab=words');
+const rowCount = () => $$('.wrong-item').length;
+const searchEl = $('[data-deck-search]');
+log('词库 Tab 有搜索框', searchEl ? searchEl.getAttribute('placeholder') : '（缺失）', !!searchEl);
+log('首屏只渲染一页（≤300 行，不是 5802 行）', String(rowCount()), rowCount() > 0 && rowCount() <= 300);
+log('未接触组显示"加载更多"', $('[data-action="deckMore"]') ? '有' : '（无，可能总词数不足）', !!$('[data-action="deckMore"]'));
+
+/* 搜索：只保留匹配项。事件必须用 domshim 自己的 DomEvent（沙箱里没有 window.Event）。 */
+if (searchEl) {
+  searchEl.value = 'state';
+  searchEl.dispatchEvent(new DomEvent('input', { bubbles: true }));
+  page.pump(200);
+  const hits = rowCount();
+  const txt = text();
+  log('搜索 state 后行数下降且仍含匹配词', 'rows=' + hits + ' / 含 state=' + /state/.test(txt),
+    hits > 0 && hits < 300 && /state/.test(txt));
+  /* 清空搜索 → 恢复全部 */
+  const s2 = $('[data-deck-search]');
+  s2.value = '';
+  s2.dispatchEvent(new DomEvent('input', { bubbles: true }));
+  page.pump(200);
+  log('清空搜索后恢复整册视图', 'rows=' + rowCount(), rowCount() > 0 && rowCount() >= hits);
+  /* 加载更多 → 追加一页 */
+  const before = rowCount();
+  const more = $('[data-action="deckMore"]');
+  if (more) {
+    more.click();
+    page.pump(200);
+    log('点"加载更多"后行数增加', before + ' → ' + rowCount(), rowCount() > before);
+  } else {
+    log('点"加载更多"后行数增加', '（无按钮，跳过）', true);
+  }
+}
+go('#/growth?tab=level');
 
 /* ---------- 12. 商店购买 → 下一局 4 颗心 ---------- */
 go('#/home');

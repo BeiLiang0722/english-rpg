@@ -265,24 +265,41 @@
     return save.streak.dailyStreak;
   });
 
-  /* ================= 词库 ================= */
-  test('词库', 'WQ.WORDS.length', 200, function () { return (WQ.WORDS || []).length; });
-  test('词库', '四字段非空率 100%', 1, function () {
+  /* ================= 词库 =================
+   * v0.3 扩容：词库从人工录入的 200 词换成 ECDICT 的 CET-4/6 全量（5802 词）。
+   * 断言随之从"等于某个具体值 / 100% 必填"改为"达到覆盖率门槛"——
+   * 权威语料里确实有个别词找不到合格例句（或被内容过滤挡掉），逐条必填会把正常数据判成坏数据。
+   * 门槛与 dev/check-words.mjs 保持一致。 */
+  const MIN_WORDS = 5800;
+  test('词库', '词条数 ≥ ' + MIN_WORDS, true, function () { return (WQ.WORDS || []).length >= MIN_WORDS; });
+  test('词库', 'phonetic 覆盖率 ≥ 95%', true, function () {
     const list = WQ.WORDS || [];
-    if (!list.length) return 0;
-    const ok = list.filter(function (w) { return w.word && w.phonetic && w.meaning_cn && w.example; }).length;
-    return ok / list.length;
+    if (!list.length) return false;
+    return list.filter(function (w) { return w.phonetic; }).length / list.length >= 0.95;
+  });
+  test('词库', 'example 覆盖率 ≥ 90%', true, function () {
+    const list = WQ.WORDS || [];
+    if (!list.length) return false;
+    return list.filter(function (w) { return w.example; }).length / list.length >= 0.9;
+  });
+  test('词库', 'id/word/meaning_cn 非空率 100%', true, function () {
+    const list = WQ.WORDS || [];
+    if (!list.length) return false;
+    return list.every(function (w) { return w.id && w.word && w.meaning_cn; });
   });
   test('词库', '单词唯一', true, function () {
     const list = WQ.WORDS || [];
     return new Set(list.map(function (w) { return w.word; })).size === list.length;
   });
-  test('词库', '例句含词且恰好 1 次', 0, function () {
+  test('词库', '例句含词且恰好 1 次', true, function () {
+    /* 只检查"有例句"的词；用词边界并排除连字符，避免 accident-prone / eagle-owl 误判 */
     const bad = (WQ.WORDS || []).filter(function (w) {
-      const re = new RegExp('\\b' + w.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'gi');
+      if (!w.example) return false;
+      const esc = w.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const re = new RegExp('(?<![a-z-])' + esc + '(?![a-z-])', 'gi');
       return (w.example.match(re) || []).length !== 1;
     });
-    return bad.length;
+    return bad.length === 0;
   });
   test('词库', 'v./n./adj./adv. 各 ≥ 12 词', true, function () {
     const counts = {};

@@ -28,7 +28,12 @@
       /* v0.2：一次中断恢复的摘要（刷新/崩溃后补结算），营地据此给出具体数字 */
       recoveredNotice: null,
       /* v0.2：跨天结算产生的待播报内容（每日任务/宝箱），由营地消费一次 */
-      dailyNotice: null
+      dailyNotice: null,
+      /* v0.3：词库总览的分页与搜索状态（5800+ 词不能整册渲染，见 growth.js wordsTab） */
+      deckQuery: '',
+      deckShownMastered: 100,
+      deckShownLearning: 100,
+      deckShownUnseen: 100
     },
     /** 本次启动的闪现数据（升级队列、徽章、Toast），不持久化 */
     boot: {

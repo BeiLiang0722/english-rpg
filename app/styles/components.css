@@ -915,6 +915,27 @@ button.chip,
 .spell-input:focus { border-color: var(--accent); }
 .spell-input:disabled { color: var(--text-disabled); cursor: not-allowed; }
 
+/* 词库总览的搜索框（v0.3：词库扩到 5800+ 词后按需渲染，靠它定位单词） */
+.deck-search {
+  display: block;
+  width: 100%;
+  /* 触控目标 ≥44px（dev/check-mobile.mjs 检查 4）；这里不用 --h-touch，因为 tokens.css 里没有这个变量 */
+  min-height: 44px;
+  margin: var(--sp-1) 0 var(--sp-2);
+  padding: 0 var(--sp-4);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-surface-2);
+  color: var(--text-primary);
+  /* ≥16px：iOS Safari 在更小字号上聚焦输入框会放大整页 */
+  font-size: var(--fs-body);
+}
+
+.deck-search::placeholder { color: var(--text-disabled); }
+.deck-search:focus { border-color: var(--accent); outline: none; }
+/* 去掉 Safari 搜索框自带的清除按钮，避免与整页重渲染抢焦点 */
+.deck-search::-webkit-search-cancel-button { -webkit-appearance: none; }
+
 .spell-hint {
   margin-top: var(--sp-2);
   font-family: var(--font-mono);

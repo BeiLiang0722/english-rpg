@@ -87,6 +87,16 @@
       }
     });
 
+    /* 输入框委托（v0.3 词库搜索用）。
+       页面是整页 innerHTML 替换，重渲染会丢焦点，所以约定：
+       处理器负责改状态并重渲染，最后自己把焦点与光标还原到搜索框。 */
+    host.addEventListener('input', function (evt) {
+      const el = evt.target.closest ? evt.target.closest('[data-deck-search]') : null;
+      if (!el || !host.contains(el)) return;
+      const fn = actionTable['__deckSearch'];
+      if (typeof fn === 'function') fn(el.value);
+    });
+
     /* 键盘：选项 1–4、Enter 下一题、Space 发音、Esc 退出（绑定在 document，避免被整页替换冲掉） */
     document.addEventListener('keydown', function (evt) {
       const fn = actionTable['__keydown'];

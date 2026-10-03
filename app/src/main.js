@@ -17,13 +17,23 @@
     if (!WQ.state.settings) WQ.state.settings = WQ.save.defaultSettings();
   }
 
-  /** 词库可用性校验（docs/03 §7.4：不允许用空词库开局） */
+  /** 词库可用性校验（docs/03 §7.4：不允许用空词库开局）
+   *  字段要求的变化（v0.3 扩容）：`example` 由「必填」降为「可选」。
+   *  原因：词库从人工录入的 200 词换成 ECDICT+CET 词表（5802 词）后，有少量词在权威语料里
+   *  找不到合格例句（例如其最佳候选句含色情/低俗内容被过滤掉）。为此拒绝启动整个 App 代价太大；
+   *  这些词仍可出选择题（Q1/Q2），只是不出 Q5 例句填空（题型选择处已有降级逻辑）。
+   *  但**不允许整库都缺例句**——那样 Q5 会全面失效，属于真正的损坏。 */
   function checkWords() {
     const list = WQ.WORDS;
     if (!Array.isArray(list) || !list.length) return { ok: false, reason: 'WQ.WORDS 为空或不是数组' };
-    const bad = list.filter(function (w) { return !w || !w.id || !w.word || !w.meaning_cn || !w.example; });
-    if (bad.length) return { ok: false, reason: '有 ' + bad.length + ' 条词缺少必填字段' };
-    return { ok: true, count: list.length };
+    /* 每条的硬字段：id / word / meaning_cn（example 允许为空） */
+    const bad = list.filter(function (w) { return !w || !w.id || !w.word || !w.meaning_cn; });
+    if (bad.length) return { ok: false, reason: '有 ' + bad.length + ' 条词缺少必填字段（id/word/meaning_cn）' };
+    const withExample = list.filter(function (w) { return w.example; }).length;
+    if (withExample < list.length * 0.5) {
+      return { ok: false, reason: '仅 ' + withExample + '/' + list.length + ' 条词有例句，词库不完整' };
+    }
+    return { ok: true, count: list.length, withExample: withExample };
   }
 
   /** 注册全部路由（docs/03 §3.3） */

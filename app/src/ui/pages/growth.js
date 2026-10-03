@@ -416,8 +416,14 @@
     ].join('');
   }
 
-  /* ---------------- Tab 4：词库总览（只读） ---------------- */
-  function wordsTab(save) {
+  /* ---------------- Tab 4：词库总览（只读） ----------------
+   * v0.3 扩容后词库有 5800+ 词，**不能整册渲染**——一次性 innerHTML 塞几千个节点会明显卡顿。
+   * 改为「搜索过滤 + 每组只显示前 PAGE 条 + 加载更多」。过滤按需遍历，只在输入/切页时重渲染。
+   */
+  var PAGE_SIZE = 100;
+
+  /** 收集当前词库的分组（按掌握状态） */
+  function deckGroups(save) {
     const groups = { mastered: [], learning: [], unseen: [] };
     (WQ.WORDS || []).forEach(function (w) {
       const p = save.progress[w.id];
@@ -425,22 +431,55 @@
       else if (WQ.srs.isMastered(p)) groups.mastered.push(w);
       else groups.learning.push(w);
     });
-    function block(title, list) {
-      return [
-        '<h3 style="margin:10px 0 4px">' + U.esc(title) + '（' + list.length + '）</h3>',
-        list.length ? list.map(function (w) {
-          return '<div class="wrong-item"><span><span class="w" lang="en">' + U.esc(w.word) + '</span> <span class="m mono">/' + U.esc(w.phonetic) + '/</span> <span class="m">' + U.esc(w.meaning_cn) + '</span></span>' +
-            '<button class="btn btn-sm btn-ghost" type="button" data-action="speakWord" data-id="' + U.esc(w.id) + '" aria-label="朗读 ' + U.esc(w.word) + '">🔊</button></div>';
-        }).join('') : '<p class="empty-note">（空）</p>'
-      ].join('');
+    return groups;
+  }
+
+  /** 关键字过滤：匹配拼写、释义或音标（空关键字返回原列表） */
+  function filterWords(list, kw) {
+    if (!kw) return list;
+    const k = kw.toLowerCase();
+    return list.filter(function (w) {
+      return (w.word && w.word.toLowerCase().indexOf(k) >= 0)
+        || (w.meaning_cn && w.meaning_cn.indexOf(k) >= 0)
+        || (w.phonetic && w.phonetic.toLowerCase().indexOf(k) >= 0);
+    });
+  }
+
+  function wordsTab(save) {
+    const groups = deckGroups(save);
+    const kw = String((WQ.state.ui && WQ.state.ui.deckQuery) || '').trim();
+    const shown = {
+      mastered: parseInt((WQ.state.ui && WQ.state.ui.deckShownMastered), 10) || PAGE_SIZE,
+      learning: parseInt((WQ.state.ui && WQ.state.ui.deckShownLearning), 10) || PAGE_SIZE,
+      unseen: parseInt((WQ.state.ui && WQ.state.ui.deckShownUnseen), 10) || PAGE_SIZE
+    };
+
+    function block(title, list, key, showLimit) {
+      const filtered = filterWords(list, kw);
+      const head = '<h3 style="margin:10px 0 4px">' + U.esc(title) + '（' + filtered.length + '）</h3>';
+      if (!filtered.length) return head + '<p class="empty-note">（空）</p>';
+      const slice = filtered.slice(0, showLimit);
+      const rows = slice.map(function (w) {
+        return '<div class="wrong-item"><span><span class="w" lang="en">' + U.esc(w.word) + '</span> <span class="m mono">' + U.esc(w.phonetic) + '</span> <span class="m">' + U.esc(w.meaning_cn) + '</span></span>' +
+          '<button class="btn btn-sm btn-ghost" type="button" data-action="speakWord" data-id="' + U.esc(w.id) + '" aria-label="朗读 ' + U.esc(w.word) + '">🔊</button></div>';
+      }).join('');
+      const rest = filtered.length - slice.length;
+      const more = rest > 0
+        ? '<button class="btn btn-sm btn-ghost btn-block" type="button" data-action="deckMore" data-id="' + key + '">加载更多（还有 ' + rest + ' 条）</button>'
+        : '';
+      return head + rows + more;
     }
+
     const total = groups.mastered.length + groups.learning.length + groups.unseen.length;
+    const hit = filterWords(groups.mastered, kw).length + filterWords(groups.learning, kw).length + filterWords(groups.unseen, kw).length;
     return [
       '<section class="card">',
       '  <h2 class="card-title"><span>词库总览</span><span>共 ' + total + ' 词</span></h2>',
-      block('已掌握', groups.mastered),
-      block('学习中', groups.learning),
-      block('未接触', groups.unseen),
+      '  <input class="deck-search" type="search" data-deck-search value="' + U.esc(kw) + '" placeholder="搜索单词 / 释义 / 音标" aria-label="搜索词库">',
+      kw ? '  <p class="empty-note">匹配到 ' + hit + ' 个词（清空搜索框可看全部）</p>' : '',
+      block('已掌握', groups.mastered, 'mastered', shown.mastered),
+      block('学习中', groups.learning, 'learning', shown.learning),
+      block('未接触', groups.unseen, 'unseen', shown.unseen),
       '</section>'
     ].join('');
   }
@@ -469,6 +508,32 @@
     tab: function (el, id) { WQ.router.go('#/growth?tab=' + id); },
     /* 数据统计 Tab 的时间范围切换（statsRange / setStatsRange 在 Tab 3 区域内定义） */
     statsRange: function (el, id) { setStatsRange(id); },
+    /* 词库总览：加载更多（每次追加一页）。key 取值 mastered / learning / unseen */
+    deckMore: function (el, id) {
+      const map = { mastered: 'deckShownMastered', learning: 'deckShownLearning', unseen: 'deckShownUnseen' };
+      const field = map[id];
+      if (!field) return;
+      const cur = parseInt(WQ.state.ui[field], 10) || PAGE_SIZE;
+      WQ.state.ui[field] = cur + PAGE_SIZE;
+      render();
+    },
+    /* 词库搜索：改状态 → 重渲染 → 还原焦点与光标（整页替换会丢焦点） */
+    __deckSearch: function (value) {
+      WQ.state.ui.deckQuery = String(value || '');
+      /* 搜索后把三组的"已显示条数"重置回一页，否则上次的展开状态会让结果看起来不对 */
+      WQ.state.ui.deckShownMastered = PAGE_SIZE;
+      WQ.state.ui.deckShownLearning = PAGE_SIZE;
+      WQ.state.ui.deckShownUnseen = PAGE_SIZE;
+      render();
+      const input = document.querySelector('[data-deck-search]');
+      if (input) {
+        try { input.focus(); } catch (e) { /* 无 DOM 环境（自检）忽略 */ }
+        const v = String(WQ.state.ui.deckQuery || '');
+        if (typeof input.setSelectionRange === 'function') {
+          try { input.setSelectionRange(v.length, v.length); } catch (e2) { /* 某些 input 类型不支持 */ }
+        }
+      }
+    },
     home: function () { WQ.router.go('#/home'); },
     startNormal: function () {
       const s = WQ.flow.createSession({ source: 'normal' });
