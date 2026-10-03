@@ -53,25 +53,23 @@
  *   3 心被打空的概率约 32%（本局提前结束、少答几题），会让「答对金币」低于 docs 假设的 6 题/局。
  *   两条一增一减，实测值与 docs 的 1110 会有几十枚的偏差，属建模事实而非脚本错误。
  *
- * NOTE2（本脚本实测到、但**不修**的 app 缺陷）：**金币被重复入账**。生产代码里
- *   · game/achievements.js:102 已经 `save.profile.coins += coinReward`（徽章）；
- *   · game/level.js:53 已经 `profile.coins += B.coins.levelUp`（升级）；
- *   · game/quest.js:181 已经 `save.profile.coins += coins`（每日任务）；
- *   而 game/balance.js:439 又 `save.profile.coins += earnedCoins`，其中 earnedCoins 含全额
- *   badgeCoins + levelUpCoins + questCoins —— 于是这三类奖励各发两次。
- *   另有 balance.js:415-419 的 questUnlocked 去重失效（getAllProgress 返回的对象没有 id 字段，
- *   `x.id` 恒为 undefined），使「当天首次解锁徽章」那一局的 badgeCoins 再翻倍。
- *   本脚本只如实统计：`额外` 列 = 实测进账 − 生产明细记账，正是这部分多给的金币；
- *   A8-2 用**实测**（余额 + 支出）判定，因此这条缺陷会直接体现在断言结果里。
+ * NOTE2（本脚本顺带当回归检测器的两个"已修"缺陷，留档以免复发）：
+ *   ① **金币重复入账（已修）**：早期版本 `balance.js` 把 `earnedCoins = coinsGained + badgeCoins +
+ *      levelUpCoins + questCoins` 全额写进 `profile.coins`，而徽章 / 升级 / 任务已分别在
+ *      `game/achievements.js`、`game/level.js`、`game/quest.js` 各自入账一次 → 三类奖励各发两次
+ *      （实测 legacy 首月累计 2797，其中 695 是重复入账）。现在改成 `deferAward` + 总账单点写入。
+ *   ② **旧徽章每局重发（已修）**：`balance.js` 的 `unlockedBefore` 曾用 `getAllProgress()` 返回对象的
+ *      `x.id`（该对象只有 `def`，没有顶层 `id`），`indexOf` 永远命中不到 → `questUnlocked` 退化成
+ *      "全部已解锁徽章" → 每天把旧徽章奖励再发一遍（实测 legacy 首月累计 8372，逐局「徽章 ×6/175」）。
+ *      现在取 `x.def.id`。
+ *   本脚本的 `额外` 列（实测 − 生产明细）与 A8-2 的首月累计就是这两条的检测器，正常情况下 `额外 === 0`。
  *
- * NOTE3（本脚本实测到、但**不修**的 app 缺陷）：**每日任务进度口径断了**。
- *   src/game/flow.js 逐题调 `WQ.quest.progress(save, { answered, correct, wrong, isNewWord, wordId })`（扁平字段），
- *   而 quest.js:238-243 读的是 `o.delta.answered/correct/wrong` 与 `o.newWords` —— 两边字段名不一致，
- *   于是「今日累计作答 8 题」「答对 6 题」「碰 6 个新词」永远不完成；
- *   而 balance.js:385-393 调 `quest.advance` 时又只传 rounds/maxCombo/isPerfect/reclaimed，
- *   不再传 answered/correct/wrong（v0.1 的 v0.2 草案里是传的）。
- *   结果：每日任务实测只有 ~15 金币/天（约 450/月），远低于 config 设计值 55/天（1650/月）。
- *   本脚本按**生产现状**复现（传扁平字段），不做"修正后"重算，差额在报告里说明。
+ * NOTE3（本脚本实测到、**当前仍存在**的 v0.2 小缺陷）：
+ *   `flow.js:42` 调 `WQ.quest.enterDay(save, now)` 但**丢弃返回值**；而 `quest.grant` 只记账、
+ *   不写 profile（quest.js:213-218），奖励只有 `balance.applyRoundEnd` 里那次 `quest.settle` 的结果
+ *   会被写进总账。于是每天由 enterDay 完成的「今日登场」任务，其 5 金币 + 5 XP 永远发不出去
+ *   （每月约 150 金币 / 150 XP）。本模拟忠实复现（开局前调 enterDay，不替它补账）。
+ *   另：任务进度从 v0.2 起改为「一局结束后由 stats.daily 重建」（quest.js:303-335），属设计选择，不是缺陷。
  */
 
 import fs from 'node:fs';
@@ -699,7 +697,7 @@ function runScope(scopeName, legacy) {  const cfg = Object.assign({}, MODEL, { l
   console.log('首月累计收入（实测：余额 + 支出，全部来源）= ' + m.totalIncome
     + '   [参考] 只算明细口径 = ' + m.bucketsSum);
   console.log('每日任务（明细入账）' + m.buckets.quest + ' / ' + MODEL.days + ' 天；config 设计上限 '
-    + m.questDesignDaily + '/天（见文件头 NOTE3：进度字段不匹配，实测远低于设计值）');
+    + m.questDesignDaily + '/天（差额原因见文件头 NOTE3：enterDay 的奖励被 flow 丢弃 + 每天只打 1 局时部分任务不可达）');
   console.log('首月购买 ' + m.bought + ' 件 / 支出 ' + m.spent + ' 金币' + '（' + Object.keys(m.byItem).map((k) => k + '×' + m.byItem[k]).join(' ') + '）'
     + ' · 理论可购件数（收入 ÷ 均价 52.5）≈ ' + Math.floor(m.totalIncome / 52.5));
   console.log('成长：等级 ' + m.level + '（升级 ' + m.levelUps + ' 次）· 累计 XP ' + m.xp + ' · 答对 ' + m.correct + '/' + m.questions
@@ -723,8 +721,8 @@ function runScope(scopeName, legacy) {  const cfg = Object.assign({}, MODEL, { l
       ? '超出上限 ' + (m.totalIncome - band2[1]) + '。算术：① 明细口径 ' + m.bucketsSum
         + '（本体 ' + m.steadyInclPerfect + ' + 升级 ' + m.buckets.levelUp + ' + 徽章 ' + m.badgeCoins
         + ' + 任务 ' + m.buckets.quest + ' + 宝箱 ' + m.chest + '）；'
-        + '② 明细外的重复入账 ' + m.extra + '（徽章/升级/任务被 balance.js:439 与各自的发奖点各加一次，见文件头 NOTE2）；'
-        + '③ 合计 ' + m.totalIncome + '。' + (legacy ? '本口径已把 v0.2 留存收益置 0，超限完全来自重复入账。' : '本口径含 v0.2 每日任务/宝箱。')
+        + '② 明细外的重复入账 ' + m.extra + '（见文件头 NOTE2 的回归检测器，正常应为 0）；'
+        + '③ 合计 ' + m.totalIncome + '。' + (legacy ? '本口径已把 v0.2 留存收益置 0。' : '本口径含 v0.2 每日任务/宝箱，超限部分主要来自它们。')
       : '');
 
   check(scopeName, 'A8-3 首月可购物品 ≥ ' + A8.firstMonthItemsMin + ' 件',

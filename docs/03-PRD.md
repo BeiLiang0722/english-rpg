@@ -928,3 +928,206 @@ type GameStore = {
 | 新增 | `rounds` 500 条裁剪策略（配额满时） | §7.3 |
 | 新增 | 多标签页 `storage` 事件处理 | §7.3 |
 | 新增 | 词库 JSON → 内存的小驼峰字段映射表 | §3.2 |
+
+---
+
+## 11. v0.2 每日任务与随机宝箱（`docs/02` §9 与本文 §11 为本轮新增）
+
+> 本章是 v0.2 二次开发轮次的新增规格。§0–§10 与附录为 v0.1 定稿原文，未作改动；
+> 与本章冲突时，以本章为准（本章是当前代码口径），并在 `docs/07-v0.2-变更与验收.md` 留了变更理由。
+> 所有数值的唯一出口仍是 `app/src/config/balance.js` 的 `daily` / `chest` / `reclaim` 三块，本章不复制第二份真相。
+
+### 11.1 每日任务（`balance.daily`）
+
+**规则**：每天 3 条 = 2 条常驻 + 1 条按本地日期**确定性**轮换。
+
+| 项 | 值 | 说明 |
+| --- | --- | --- |
+| 条数 | `daily.questCount = 3` | 常驻 2 条（`daily.alwaysIds`）+ 轮换 1 条 |
+| 轮换 | 按 `YYYY-MM-DD` 做确定性哈希挑选 | **同一天多次进出营地拿到的清单必须一致**；不得用 `Math.random()`（否则刷新就换题，玩家会以为在做弊） |
+| 发奖 | 自动，**无「领取」按钮** | 完成后立刻进账；设计理由是「不做打卡压力、不给忘记领取的惩罚感」 |
+| 全清加成 | 3 条全完成 → `+20 金币 / +10 XP`，每日一次 | 幂等键 `daily.questBonusClaimed` |
+
+**任务池**（`balance.daily.quests`，`kind` 与 `daily.counters` 的对应关系见下表）：
+
+| id | kind | 名称 | 目标 | XP | 金币 |
+| --- | --- | --- | --- | --- | --- |
+| `questLogin` | `login` | 今日登场 | 1（打开一次） | 5 | 5 |
+| `questAnswer` | `answer` | 练手 8 题 | 8 | 8 | 15 |
+| `questCorrect` | `correct` | 答对 6 题 | 6 | 8 | 15 |
+| `questPerfect` | `perfect` | 一局全对 | 1 | 10 | 15 |
+| `questRound` | `round` | 拿下 2 局 | 2 | 8 | 15 |
+| `questWrong` | `wrong` | 挫败 4 个错词 | 4 | 6 | 12 |
+| `questCombo` | `combo` | 再连胜 5 次 | 5 | 8 | 15 |
+| `questDeck` | `deck` | 碰 6 个新词 | 6 | 8 | 15 |
+
+`kind → 进度来源` 映射（`quest.js` 的 `values` 表，唯一事实来源是 `daily.counters` 与 `daily.todayRounds`）：
+
+| kind | 取自 | 语义 |
+| --- | --- | --- |
+| `login` | `daily.rollDate === today` | 只有真正进营地/开局（`quest.enterDay()`）才算；纯结算路径不白送 |
+| `answer` | `counters.answered` | 今日作答题数（跳过不计） |
+| `correct` / `correctOfRound` | `counters.correct` | 今日答对题数 |
+| `round` | `daily.todayRounds` | 今日**完成**局数（中断局不计，见 §11.4） |
+| `wrong` | `counters.wrong` | 今日答错题数 |
+| `combo` | `counters.streakCorrect` | 今日最长连续答对（可跨天延续，见 §11.2） |
+| `newWords` | `counters.newWords` | 今日首次接触的词数 |
+| `deck` | `counters.distinctWords` | 今日见到的不同词数 |
+| `perfect` | `daily.perfectToday` | 今日全对局数 |
+
+### 11.2 随机宝箱（`balance.chest`）
+
+| 项 | 值 | 说明 |
+| --- | --- | --- |
+| 碎片来源 | `correctStreakPerShard = 3` | 今日连续答对每满 3 次得 1 枚 |
+| 单日上限 | `shardsPerDay = 3` | 常规当日最多 3 枚 |
+| 幸运加码 | 连续答对 ≥ `luckyStreakPerBonus = 7` → 额外 +1 枚，总上限 `luckyShardCap = 4` | 鼓励「今天打得顺就多拿一点」，但封顶防通胀 |
+| 开箱门槛 | `shardsRequired = 3` | 3 枚开 1 箱 |
+| 每日开箱上限 | 1 箱 | 幂等键 `daily.chestOpenDate`（同一天第二次调用返回 `{ok:false, reason:'openedToday'}`） |
+| 登录奖励 | 连续登录天数是 `loginBonusDays = 7` 的整数倍 → 当日白得 1 箱 | 唯一直接奖励「每天都来」的钩子 |
+| 跨天携带 | 未开箱的碎片次日**只保留 1 枚**（`chestSpawns = min(1, 昨日碎片)`） | 既给「今天不开会亏」的温和拉力，又不让碎片无限囤积 |
+| 随机源 | 默认 `Math.random`，可被 `chest.setRandom(fn)` 注入 | 自检用固定序列断言档位边界 |
+
+**档位表**（`balance.chest.tiers`，权重合计 100）：
+
+| 档位 | id | 权重 | 金币 | XP | 图标 |
+| --- | --- | --- | --- | --- | --- |
+| 普通 | 1 | 60 | 25 | 10 | 📦 |
+| 稀有 | 2 | 32 | 45 | 20 | 🎁 |
+| 传说 | 3 | 8 | 70 | 35 | 🏆 |
+
+档位表现必须**不只靠颜色区分**（`docs/02` §9.5）：三档同时用图标、边框粗细与档位文字区分。
+
+### 11.3 错题本重练（`balance.reclaim`）
+
+| 项 | 值 | 说明 |
+| --- | --- | --- |
+| 冷却天数 | `reclaimIntervalDays(错 N 次) = min(maxDays, max(baseDays, N))`，`maxDays = 7`、`baseDays = 1` | 错得越多越快能重练 |
+| 判定 | `save.reclaimState(progress, now)` → `{can, days, dueAt, reason}` | `can=true` 才能在错题本点「重练」 |
+| 例 | 错 2 次且 `lastWrongAt` 是 1 月 10 日 → 1 月 11 日不可重练、1 月 13 日可重练 | 冷却按**本地自然日**算，不看小时 |
+| 重练局 | `flow.createSession({source:'wrongBook', wordIds:[id]})` 或 `{reclaimOnly:true}` | `wordIds` 会收窄选词集合：单词语义下只出这个词；`reclaimOnly` 只取「已到冷却」的错词 |
+| 与「移出」的区别 | 「移出」= `wrongCount=0` / `lastWrongAt=null`（保留 SRS）；重练 = 真的再答一遍 | 前者是「我会了别再烦我」，后者是「我要把它打回来」 |
+
+### 11.4 中断局（`aborted`）口径
+
+| 项 | 规则 |
+| --- | --- |
+| 触发 | 点「✕ 退出」并确认（`flow.abortSession`）；或刷新/崩溃后由 `flow.recoverSession()` 补结算 |
+| 保留 | 全部已得 XP / 金币 / 词级 SRS 进度 / `stats` 题数聚合 / 每日任务进度 / 宝箱碎片 |
+| 不保留 | 不算「完成局」：`isWin=false`、不写 `daily.todayFirstRoundDone`、不进 `stats.totalRounds` 与 `daily.todayRounds`、`stats.daily[].rounds` 不加 |
+| 徽章 | 只放行 `ABORT_SAFE_BADGES` 白名单（累计量类：初次交锋 / 百词斩 / 老练猎人 / 猎人领袖 / 挥金如土 / 满级猎手）；「首次通关 / 无伤 / 百发百中 / 早起鸟 / 夜猫子」一律不发 |
+| 兼容 | 旧存档里没有 `aborted` 字段的历史中断会话，用「血量未归零且未答完全部题」反推同一结论 |
+| 落库 | 仍然记一条 `roundRecord`（带 `aborted:true`），否则收益无处安放 |
+
+### 11.5 v0.2 新增徽章（B12–B14）
+
+| id | 名称 | 条件 | `checkOn` | 奖励 |
+| --- | --- | --- | --- | --- |
+| `dailyRegular` | 日常猎手 | 首次完成当日全部每日任务（`daily.questBonusClaimed >= 1`） | `quest` | +40 金币 |
+| `proofReturn` | 浪子回头 | 从错题本重练并答对 ≥ 1 个词（`daily.reclaimed >= 1`） | `reclaim` | +30 金币 |
+| `treasureHunter` | 宝箱猎人 | 累计开箱 ≥ 3 个（`profile.chestOpenedTotal >= 3`） | `chest` | +50 金币 |
+
+`checkOn` 只用于说明「这条徽章在哪个事务里被判定」，判定入口统一是 `WQ.ach.checkAchievements(save, now, ctx)`：
+- 结算路径（`checkOn: 'roundEnd'`）由 `balance.applyRoundEnd` 调用；
+- `quest` / `reclaim` 由 `applyRoundEnd` 里同一次调用覆盖；
+- `chest` / `shopBuy` 由开箱 / 购买事务在自己的路径里调用，让「当场解锁」即时反馈。
+
+### 11.6 数据模型增量：`save.daily` 与 `save.profile`
+
+跨天结算一律以**本地日期键**为准（`util.todayKey()`，绝不用 `toISOString().slice(0,10)`，否则跨时区错一天）。
+
+| 字段 | 类型 | 默认 | 作用 |
+| --- | --- | --- | --- |
+| `daily.counters` | `{answered,correct,wrong,combo,streakCorrect,distinctWords,newWords}` | 全 0 | 今日计数器；**结算时由 `stats.daily[today]` 重建**（见 §11.7） |
+| `daily.countersDate` | `YYYY-MM-DD \| null` | `null` | 计数器归属日；跨天时重置并决定 `streakCorrect` 是否延续 |
+| `daily.rollDate` | `YYYY-MM-DD \| null` | `null` | 「今天打开过游戏」（只有 `quest.enterDay()` 写） |
+| `daily.seenToday` | `{wordId:1}` | `{}` | 今日已见词（`distinctWords` 的去重依据） |
+| `daily.questDate` | `YYYY-MM-DD \| null` | `null` | 任务清单归属日 |
+| `daily.questIds` | `string[]` | `[]` | 当日 3 条任务 id（确定性轮换结果） |
+| `daily.questProgress` / `questDone` / `questClaimed` | `{id:number\|boolean}` | `{}` | 进度 / 已完成 / 已发奖（幂等键） |
+| `daily.questRoundIds` | `{roundId:1}` | `{}` | 已推进过任务进度的局（防重复结算叠加局数） |
+| `daily.questBonusClaimed` / `questBonusDate` | `0\|1` / `YYYY-MM-DD\|null` | `0` / `null` | 全清加成的幂等键与日期 |
+| `daily.chestShards` | `number` | `0` | 当前可用碎片 |
+| `daily.chestShardsToday` | `number` | `0` | 今日已产出的碎片（受上限约束） |
+| `daily.chestTodayDate` | `YYYY-MM-DD \| null` | `null` | 碎片上限归属日 |
+| `daily.chestSpawns` | `number` | `0` | 今日已「产生」的宝箱数（含登录奖励） |
+| `daily.chestOpenDate` | `YYYY-MM-DD \| null` | `null` | **开箱幂等键**：同一天第二次开箱必须失败 |
+| `daily.chestHistory` | `Array<{date,tier,coins,xp}>` | `[]` | 最近 30 次开箱（UI 展示「上次开出」） |
+| `daily.reclaimed` | `number` | `0` | 今日重练答对的词数（B13） |
+| `daily.perfectToday` | `number` | `0` | 今日全对局数（`questPerfect`） |
+| `daily.todayAttempts` | `number` | `0` | 今日开局次数（含中断局，仅用于统计与排查） |
+| `profile.pendingScoutEye` | `number` | `0` | 待生效侦查之眼次数（**从 save 顶层迁入**） |
+| `profile.pendingStrawDouble` | `boolean` | `false` | 待生效替身稻草人（同上） |
+| `profile.chestOpenedTotal` | `number` | `0` | 累计开箱数（B14 进度） |
+| `roundRecord.aborted` | `boolean` | — | 该局是否中断（§11.4） |
+| `roundRecord.questXp` / `questCoins` | `number` | `0` | 任务收益单列，保证顶部合计 = 明细逐行相加 |
+| `roundRecord.extraXp` / `extraCoins` | `number` | — | 非本体收益合计（徽章 + 升级 + 任务） |
+
+**兼容策略**：`saveVersion` 保持 **1** 不变 —— 新增字段全部由 `save.fillDefaults` 做**结构补全**（含类型校验、区间钳制、以及旧档顶层道具字段的迁移），不需要版本号升级。
+只有「`version` 高于当前代码」的存档会被 `save.migrate()` 拒绝加载（`rejected:true`），此时 `persist` 置 `locked`，**本次会话完全不写主存档键**，原文另存 `.bak`。
+
+### 11.7 跨天结算：三个日期键 + 幂等
+
+| 入口 | 调用链 |
+| --- | --- |
+| 启动 | `main.js` → `actions.loadFromStore()` → `pages.home.enter()` / `game.rolloverDaily()` |
+| 每次回到营地 | `home.render()` → `home.enter()` → `game.rolloverDaily()` |
+| 开局前 | `flow.createSession()` → `game.rolloverDaily()` + `quest.enterDay()` |
+
+`game.rolloverDaily(save, now)` 做的事（顺序固定）：重置每日标志与限购 → 跨月重置月度计数 → `streak.rolloverStreak()` → `quest.settle()`（任务清单、计数器、宝箱碎片）。
+
+**幂等要求**（三条都必须满足，且都有断言守着）：
+1. 同一天重复调用 `settle()` 不重复发奖（`questClaimed` / `questBonusClaimed` / `chestOpenDate` 是幂等键）；
+2. 跨天无论跳了几天，只结算一次（依据三个日期键的不等判断）；
+3. 同一 `roundId` 重复 `applyRoundEnd` 不重复发奖（`save.rounds` 里已有同 `roundId` 即提前返回）。
+
+**任务进度为什么在结算时重建而不是逐题累加**：`stats.daily[today]` 是今日聚合的**唯一**事实来源，
+由它推导 `daily.counters` 天然幂等（重复结算、刷新补结算、中断局都得到同一结果），
+不需要 pending 缓冲，也不可能出现「逐题加一次 + 结算再加一次」的双重记账。
+代价是任务进度在**一局结束后**更新（营地卡片是打完一局才从 0/8 跳到 8/8），这是有意的取舍。
+
+### 11.8 金币 / XP 的入账契约（单一写点）
+
+> 背景：v0.1 存在真实的重复入账 —— `applyRoundEnd` 按「本体 + 全部明细行」算好总额写进 `profile.coins`，
+> 而徽章（`achievements.js`）、升级（`level.js`）、任务（`quest.js`）**各自也在直接写** `profile.coins`，
+> 三类奖励各发两次；另有一处 `getAllProgress().map(x => x.id)` 取不到 `id`，
+> 使「本局新解锁徽章」退化成「全部已解锁徽章」，旧徽章奖励每局重发。详见 `docs/07` §4.1。
+
+**契约**：
+
+| 模块 | 是否直接写 `profile.coins/xp` | 说明 |
+| --- | --- | --- |
+| `game/balance.js` 的 `applyRoundEnd` | ✅ **唯一写点** | 负责 `earnedCoins = coinsGained + badgeCoins + levelUpCoins + questCoins` 与 `earnedXp` 的最终入账 |
+| `game/achievements.js` 的 `checkAchievements` | ⛔（传 `ctx.deferAward:true` 时） | 默认仍就地发奖（商店/开箱路径用）；结算路径传 `deferAward`，只返回 `award:{coins,xp}` |
+| `game/level.js` 的 `applyLevelUps` | ⛔（默认） | 只返回 `coinsFromLevels`；需要旧行为可传 `{credit:true}` |
+| `game/quest.js` 的 `grant` / `settle` | ⛔ | 只记账，金额由 `settle()` 的返回值 `coinGain`/`xpGain` 带出；非结算入口（营地登录、开局）由调用方**显式入账** |
+| `game/chest.js` 的 `open` | ✅ | 开箱是独立事务（不发生在 `applyRoundEnd` 内），自己入账即可 |
+| `game/shop.js` 的 `buy` | ✅ | 扣币事务，自己记账 |
+
+**必须成立的不变量**：`roundRecord.breakdown` 里所有 `unit:'coin'` 的行逐行相加，
+加上 `roundRecord.coinsGained`，等于本局 `profile.coins` 的实际增量；XP 同理（`xpGained + bonusXp + questXp`）。
+这条不变量由 `dev/dom-e2e.mjs` 的两条断言守着，并由 `dev/sim-economy.mjs` 的「明细外的重复入账」列长期监控（应恒为 0）。
+
+### 11.9 单局 XP 上限口径的修正（`[待上游确认]`）
+
+`docs/03` §5.1 写的上限「215」在其自身算式下应为 285（`8×15 + 8×5 + 8×5 + 35 + 20 + 30`）。
+v0.2 进一步查明：**285 这个构造本身依赖一个被测出的缺陷** ——
+v0.1 的 `applyAnswer` 以每局重置的 `session.progressMap` 为基准，使 `seenCount` 恒为 0，
+于是同一词在每一局都被当作新词，「新词首答 +5 / 击败新词 +5」每局重发。
+
+v0.2 已把基准改为 `save.progress[q.wordId]`（同一局内第二次作答该词时用本局已累计值；免费重试回滚到本局快照）。
+
+因此 A14 的断言应改为：**`xp ∈ [10, 按本局题型分布 + 实际新词数逐条相加]`**。
+建议同时把 §5.1 的「215」改写为「按分布计算的上限，形如 285（8 题全 Q3/Q5、全对、全部为新词）」。
+`[待上游确认]` —— 本轮不自行改数值（§5 前言明确禁止）。
+
+### 11.10 需要同步的既有章节
+
+| 既有位置 | 需要怎么改 | 状态 |
+| --- | --- | --- |
+| §4.1 ⑤ 四宫格入口写「成长 / 词库 / 商店 / 设置」 | 实现为「成长 / **错题本** / 商店 / 设置」，词库在「成长」页第 4 个 Tab | **口径已统一为按实现**（`docs/06` D23） |
+| §4.10 用户操作 | 已补「移出」并新增「重练（冷却）」两条入口 | **已完成**，见 §11.3 |
+| §4.9 用户操作 | 已补徽章详情弹层与「下一称号预览」 | **已完成** |
+| §4.8 结算页 | 已补第 5 个数字「距下一级还差 X XP」，并新增「每日任务」明细行 | **已完成** |
+| §4.2 异常③（中断局） | 已按「保留收益、不计完成局」落地 | **已完成**，见 §11.4 |
+| §7.3（多标签） | 实现从「只提示」升级为「写盘前读盘合并」 | **已完成**，见 `docs/07` §1.3 |
