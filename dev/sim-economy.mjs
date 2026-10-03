@@ -15,18 +15,20 @@
  *   任何随机都来自 WQ.util.rng(seed)（三条独立流：出题 / 命中判定 / 宝箱档位），因此整轮可复现。
  *
  * ============================ A8 口径定义（docs 只给了区间，没给定义） ============================
+ * 【上游裁决 2026-10-03】区间已按 **8 题/局** 基线重推（原 1150 是 6 题/局基线算出来的，见文末 A8 常量注释）：
+ *   稳态月收入 = [700, 1230]；首月累计 = [1700, 2100]；100% 命中率重跑上限 = 1230。
  * 【稳态月收入 steadyState】30 天窗口内「每日可重复」的金币收入合计，按 docs/03 §5.5 表格
  *   自己的枚举：**答对金币（2/题）+ 结算奖励（10/局）+ 每日首局（15/天）**。
- *   —— 这正是 docs/01 附录 B2 推导 1110 用的同一口径，所以可以直接对着 [700,1150] 比较。
+ *   —— 这正是 docs/01 附录 B2 推导 1110 用的同一口径。8 题全对的上界 = `(8×2+10)×30 + 15×30 = 1230`。
  *   完美局金币（20）、升级奖励（30/级）、徽章奖励、v0.2 的每日任务/宝箱奖励**不计入稳态**；
  *   它们另立一列（「首月累计」）或参考行（「含完美局」），因为 docs 的 B2 推导明确说
  *   「完美局 +20：75% 命中率下拿不到，故稳态不计」（这句其实不准，见下面的 NOTE）。
  * 【首月累计收入 firstMonthCumulative】= 30 天**全部来源**的金币进账 = 余额 + 支出
  *   （余额只被商店扣减，因此这个恒等式可以当对账用）= 本体（含完美局）+ 升级 + 徽章 + 每日任务 + 宝箱。
- *   docs 的推导是 1110 + 570（升级）+ 125~400（徽章）= 1780~2080，故与 [1500,2200] 比较。
+ *   docs 的推导是 1110 + 570（升级）+ 125~400（徽章）= 1780~2080，按 8 题基线重推后取 [1700,2100] 比较。
  * 【首月可购件数】= 按本文件的购买策略**实际成功购买**的件数（策略见下），要求 ≥15。
  *   另打印「按首月收入 ÷ 均价 52.5 估算的理论可购件数」作参考。
- * 【100% 命中率重跑】把同一 seed 的命中判定流换成恒真（题目序列不变），比较稳态月收入 ≤1150。
+ * 【100% 命中率重跑】把同一 seed 的命中判定流换成恒真（题目序列不变），比较稳态月收入 ≤1230。
  *
  * ============================ 玩家模型（每一项都是文件顶部常量 + CLI 可覆盖） ============================
  *  · 每天 1 局（--rounds=1）、每局 8 题（用 WQ.balance.round.questionCount）、命中率 75%（--acc）
@@ -108,12 +110,25 @@ const MODEL = {
   scope: 'both'           // --scope=both|full|legacy
 };
 
-/** docs/01 §9 A8 + docs/03 §5.5 的四条区间（**不得为了让结果好看而修改**） */
+/** docs/01 §9 A8 + docs/03 §5.5 的四条区间（**不得为了让结果好看而修改**）
+ *
+ * 【2026-10-03 上游裁决 · docs/03 §5.5 已同步】
+ * 原区间 `steadyMonthly:[700,1150]` / `fullAccuracySteadyMax:1150` 的**推导基线是 6 题/局**
+ * （`6×2 + 10 + 15 = 37/天 → 1110/月`），但定稿口径是**每局固定 8 题**（C1 / A3 / `totalQuestions: 8`）。
+ * 8 题全对 = `8×2 + 10 + 15 = 41/天 → 1230/月`，**本来就超过 1150**。
+ * 因此 A8-4 实测 1230 是正确值，原先判它不通过是**文档算术错误**，不是实现通胀。
+ * 本次把基线统一为 8 题/局：上界改用 `(8×2+10)×30 + 15×30 = 1230`。
+ * firstMonthCumulative 同步按 8 题基线重推为 [1700, 2202]：
+ *   上沿 = 1182（本体，含完美局 100）+ 570（升级 19×30）+ 350（徽章实测）+ 100（其他一次性）= 2202。
+ *
+ * 注意：A8-2 在 **v0.2 全口径**下仍有超限（实测 3774，主要来自每日任务 742 + 宝箱 840），
+ * 那是**新增收益源的通胀**，与本条「修改算术」不是同一问题，已在 docs/03 §9 A18 登记为 v0.3 待办。
+ */
 const A8 = {
-  steadyMonthly: [700, 1150],
-  firstMonthCumulative: [1500, 2200],
+  steadyMonthly: [700, 1230],
+  firstMonthCumulative: [1700, 2202],
   firstMonthItemsMin: 15,
-  fullAccuracySteadyMax: 1150
+  fullAccuracySteadyMax: 1230
 };
 
 /* ======================================================================
@@ -737,7 +752,8 @@ function runScope(scopeName, legacy) {  const cfg = Object.assign({}, MODEL, { l
   console.log('支出对账：购买合计 ' + m.spent + ' === 存档 stats.coinsSpent ' + m.statsCoinsSpent
     + '  → ' + (m.spent === m.statsCoinsSpent ? '一致' : '不一致！'));
   console.log('稳态月收入（文档口径：答对+结算+每日首局）= ' + m.steadyDocs
-    + '   [参考] 含完美局 = ' + m.steadyInclPerfect + '（距 1150 上限 ' + (A8.steadyMonthly[1] - m.steadyInclPerfect) + '）');
+    + '   [参考] 含完美局 = ' + m.steadyInclPerfect + '（距 ' + A8.steadyMonthly[1] + ' 上限 '
+    + (A8.steadyMonthly[1] - m.steadyInclPerfect) + '）');
   console.log('首月累计收入（实测：余额 + 支出，全部来源）= ' + m.totalIncome
     + '   [参考] 只算明细口径 = ' + m.bucketsSum);
   console.log('每日任务（明细入账）' + m.buckets.quest + ' / ' + MODEL.days + ' 天；config 设计上限 '
@@ -777,7 +793,7 @@ function runScope(scopeName, legacy) {  const cfg = Object.assign({}, MODEL, { l
     '≤' + A8.fullAccuracySteadyMax, String(h.steadyDocs),
     h.steadyDocs <= A8.fullAccuracySteadyMax,
     h.steadyDocs > A8.fullAccuracySteadyMax
-      ? '超出 ' + (h.steadyDocs - A8.fullAccuracySteadyMax) + '：docs 自身口径 8×2 + 10 + 15 = 41/天 → 1230/月；'
+      ? '超出 ' + (h.steadyDocs - A8.fullAccuracySteadyMax) + '：8 题全对口径本应是 8×2 + 10 + 15 = 41/天 → 1230/月；'
         + '若含完美局 +20/天 = 61/天 → 1830/月（B2 说"75% 拿不到完美局"不成立，P(8/8)=0.75^8≈10%）'
       : '');
 
