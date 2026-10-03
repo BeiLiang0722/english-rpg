@@ -64,11 +64,20 @@
  *      现在取 `x.def.id`。
  *   本脚本的 `额外` 列（实测 − 生产明细）与 A8-2 的首月累计就是这两条的检测器，正常情况下 `额外 === 0`。
  *
- * NOTE3（本脚本实测到、**当前仍存在**的 v0.2 小缺陷）：
- *   `flow.js:42` 调 `WQ.quest.enterDay(save, now)` 但**丢弃返回值**；而 `quest.grant` 只记账、
- *   不写 profile（quest.js:213-218），奖励只有 `balance.applyRoundEnd` 里那次 `quest.settle` 的结果
- *   会被写进总账。于是每天由 enterDay 完成的「今日登场」任务，其 5 金币 + 5 XP 永远发不出去
- *   （每月约 150 金币 / 150 XP）。本模拟忠实复现（开局前调 enterDay，不替它补账）。
+ * NOTE3（**每日任务金币到底从哪里入账** —— 旧版文件头的结论是错的，此处更正并留档）：
+ *   旧版写的是「`flow.js:42` 丢弃 `enterDay` 返回值 → 每月约 150 金币 / 150 XP 永远发不出去」。
+ *   现象前半段对、结论错。实测（三段探针）的真实链路是：
+ *     1. 跨天后第一次 `rolloverDaily()` 内部就有一次 `quest.settle()`（balance.js:636）。它把
+ *        `daily.rollDate` 置为今天并**完成**「今日登场」，但 `rolloverDaily` 不消费其返回值，
+ *        所以此刻只有 `questDone.questLogin = true`，profile 还没加钱 —— 这一步确实"记了账没给钱"。
+ *     2. 于是稍后无论从 `pages/home.js:33-51` 还是 `flow.createSession`（flow.js:43-57）再调
+ *        `enterDay()`，返回的都是 `{coins:0, xp:0}`（已 claimed，幂等），不存在"被丢弃的奖励"。
+ *     3. 真正入账发生在当天第一局结算：`applyRoundEnd` 里的 `quest.settle()` 把这笔已 claimed 的
+ *        奖励汇总成 `questCoins`，写进 RoundRecord 的 `breakdown` 行 `quest`（balance.js:411-433、498）。
+ *        A8-2 的「每日任务 742」正是这一口径，**没有丢钱**。
+ *   本脚本按下述方式复现生产顺序：① 跨天 `rolloverDaily`；② 开局前 `rolloverDaily` + `enterDay`，
+ *   并断言其返回值与 profile 增量一致（`creditEnterDay()` 兼做这道校验）；③ 局末 `applyRoundEnd`
+ *   取 `quest` 明细行。对账恒等式（明细合计 + extra === 余额 + 支出，且 extra === 0）是这条链路的守护者。
  *   另：任务进度从 v0.2 起改为「一局结束后由 stats.daily 重建」（quest.js:303-335），属设计选择，不是缺陷。
  */
 
@@ -402,6 +411,35 @@ function playSession(WQ, save, s, now, cfg, rndAnswers) {
   return s;
 }
 
+/**
+ * 开局前的「今日登场」入账 —— 逐行照抄 flow.createSession（flow.js:43-57）与
+ * pages/home.js:33-51 的两个生产入口（quest.grant 只记账不写 profile，必须由调用方入账）。
+ *
+ * 实测结论（见文件头 NOTE3）：走到这里时 `enterDay()` 通常返回 {0,0}，因为跨天那一步的
+ * `rolloverDaily() → quest.settle()` 已经把「今日登场」claimed 掉了；该笔奖励改由当天第一局
+ * 结算时的 `applyRoundEnd → quest.settle()` 汇总进 RoundRecord 的 `quest` 明细行。
+ * 因此本函数在正常情况下是**空操作**，它的价值在于：一旦哪天真有非零返回值，就说明链路变了，
+ * 调用处的 `credited.coins !== preRoundGain` 会立刻报警（不会静默丢钱）。
+ * @returns {{coins:number, xp:number}} 实际入账金额
+ */
+function creditEnterDay(WQ, save, now) {
+  if (!WQ.quest) return { coins: 0, xp: 0 };
+  const q = WQ.quest.enterDay(save, now);
+  const coins = (q && Number(q.coinGain)) || 0;
+  const xp = (q && Number(q.xpGain)) || 0;
+  if (coins) {
+    save.profile.coins = (Number(save.profile.coins) || 0) + coins;
+    if (save.stats) save.stats.coinsEarned = (Number(save.stats.coinsEarned) || 0) + coins;
+  }
+  if (xp) {
+    save.profile.xp = (Number(save.profile.xp) || 0) + xp;
+    save.profile.totalXp = (Number(save.profile.totalXp) || 0) + xp;
+    WQ.level.applyLevelUps(save.profile);
+  }
+  WQ.quest.resetPending();
+  return { coins: coins, xp: xp };
+}
+
 /** 把一条 RoundRecord 的金币拆成 A8 关心的桶（按 breakdown 的 coin 行 + 答对金币） */
 function coinBuckets(WQ, rec) {
   const B = WQ.balance;
@@ -507,11 +545,17 @@ function simulate(cfg) {
     /* ---- 3. 本日的局（一局默认）---- */
     for (let r = 0; r < cfg.roundsPerDay; r++) {
       const coinsBeforePreRound = Number(save.profile.coins) || 0;
-      /* flow.js:41-42：开局前再做一次跨天结算 + 记「今日登场」 */
+      /* flow.js:41-57：开局前再做一次跨天结算 + 记「今日登场」并把返回的奖励真正入账。
+         实测这里恒返回 {0,0}（奖励改由本局结算的 quest 明细行入账，见文件头 NOTE3）。 */
       WQ.game.rolloverDaily(save, dayDate);
-      if (WQ.quest) { WQ.quest.enterDay(save, dayDate); WQ.quest.resetPending(); }
+      const credited = creditEnterDay(WQ, save, dayDate);
       const preRoundGain = (Number(save.profile.coins) || 0) - coinsBeforePreRound;
       if (preRoundGain) { row.quest += preRoundGain; totals.quest += preRoundGain; }
+      if (credited.coins !== preRoundGain) {
+        console.error('开局前入账对账失败：creditEnterDay 返回 ' + credited.coins
+          + '，但 profile.coins 实际增加 ' + preRoundGain + '（每日任务入账链路变了？见文件头 NOTE3）');
+        process.exit(2);
+      }
 
       const coinsBeforeRound = Number(save.profile.coins) || 0;
       const round = WQ.questionPool.buildRound({
@@ -697,7 +741,8 @@ function runScope(scopeName, legacy) {  const cfg = Object.assign({}, MODEL, { l
   console.log('首月累计收入（实测：余额 + 支出，全部来源）= ' + m.totalIncome
     + '   [参考] 只算明细口径 = ' + m.bucketsSum);
   console.log('每日任务（明细入账）' + m.buckets.quest + ' / ' + MODEL.days + ' 天；config 设计上限 '
-    + m.questDesignDaily + '/天（差额原因见文件头 NOTE3：enterDay 的奖励被 flow 丢弃 + 每天只打 1 局时部分任务不可达）');
+    + m.questDesignDaily + '/天（每天只打 1 局，因此「一局全对 / 拿下 2 局 / 连对 5 题」这类条目多数不可达；'
+    + '「今日登场」已按生产路径入账，见文件头 NOTE3）');
   console.log('首月购买 ' + m.bought + ' 件 / 支出 ' + m.spent + ' 金币' + '（' + Object.keys(m.byItem).map((k) => k + '×' + m.byItem[k]).join(' ') + '）'
     + ' · 理论可购件数（收入 ÷ 均价 52.5）≈ ' + Math.floor(m.totalIncome / 52.5));
   console.log('成长：等级 ' + m.level + '（升级 ' + m.levelUps + ' 次）· 累计 XP ' + m.xp + ' · 答对 ' + m.correct + '/' + m.questions
@@ -735,6 +780,25 @@ function runScope(scopeName, legacy) {  const cfg = Object.assign({}, MODEL, { l
       ? '超出 ' + (h.steadyDocs - A8.fullAccuracySteadyMax) + '：docs 自身口径 8×2 + 10 + 15 = 41/天 → 1230/月；'
         + '若含完美局 +20/天 = 61/天 → 1830/月（B2 说"75% 拿不到完美局"不成立，P(8/8)=0.75^8≈10%）'
       : '');
+
+  /* 入账链路守护断言（文件头 NOTE3 的回归检测器）。
+     每日任务金币来自 applyRoundEnd 的 `quest` 明细行，而 quest 明细行的存在又要求当天的局真的结算过；
+     因此唯一会「记账不发钱」的情形是全月零入账却 extra === 0 —— 用下面两条一起卡住：
+       ① 每日任务明细必须真的有钱（> 0），且不超过 config 的设计上限 × 天数；
+          （legacy 口径已把任务奖励置 0，该条不适用，改为断言必须恰为 0）
+       ② 明细外入账 extra 必须为 0（任何"记了账没给钱/发了两遍"都会让恒等式失衡）。 */
+  const questCap = m.questDesignDaily * MODEL.days;
+  check(scopeName, '入账链路：每日任务金币经 quest 明细行入账且不超过设计上限',
+    legacy ? '= 0（legacy 已置 0）' : '0 < x ≤ ' + questCap, String(m.buckets.quest),
+    legacy ? m.buckets.quest === 0 : (m.buckets.quest > 0 && m.buckets.quest <= questCap),
+    m.buckets.quest > questCap
+      ? '超过设计上限 ' + m.questDesignDaily + '/天 × ' + MODEL.days + ' 天 —— 检查是否重复发奖'
+      : (!legacy && m.buckets.quest === 0
+        ? '零入账：跨天 settle 的奖励没有落到任何 RoundRecord（见文件头 NOTE3）' : ''));
+  check(scopeName, '入账链路：明细外入账恒为 0（明细逐行相加 === 档内增量）',
+    '0', String(m.extra) + '（' + m.mismatchRounds + '/' + m.rounds + ' 局）',
+    m.extra === 0,
+    m.extra === 0 ? '' : '有来源没有被明细覆盖或多记了一遍（见文件头 NOTE2）');
 
   return { main: m, acc100: h };
 }

@@ -947,6 +947,7 @@ type GameStore = {
 | 轮换 | 按 `YYYY-MM-DD` 做确定性哈希挑选 | **同一天多次进出营地拿到的清单必须一致**；不得用 `Math.random()`（否则刷新就换题，玩家会以为在做弊） |
 | 发奖 | 自动，**无「领取」按钮** | 完成后立刻进账；设计理由是「不做打卡压力、不给忘记领取的惩罚感」 |
 | 全清加成 | 3 条全完成 → `+20 金币 / +10 XP`，每日一次 | 幂等键 `daily.questBonusClaimed` |
+| 每日上限（派生，非配置项） | 金币 `(5+15) + 15 + 20 = 55/天`；XP `(5+8) + 10 + 10 = 33/天` | 取「2 条常驻 + 当日最肥的 1 条轮换 + 全清加成」；`dev/sim-economy.mjs` 的「设计上限」列按同一口径计算 |
 
 **任务池**（`balance.daily.quests`，`kind` 与 `daily.counters` 的对应关系见下表）：
 
@@ -1085,6 +1086,18 @@ type GameStore = {
 由它推导 `daily.counters` 天然幂等（重复结算、刷新补结算、中断局都得到同一结果），
 不需要 pending 缓冲，也不可能出现「逐题加一次 + 结算再加一次」的双重记账。
 代价是任务进度在**一局结束后**更新（营地卡片是打完一局才从 0/8 跳到 8/8），这是有意的取舍。
+
+**每日任务奖励的入账点（易误读，写清楚）**：`quest.grant()` 只记账、**不写 `profile`**，
+所以「奖励已经 claimed」不等于「金币已到账」。真实链路是：
+
+| 步 | 发生什么 | 谁负责把金币写进 `profile` |
+| --- | --- | --- |
+| 1 | 跨天后第一次 `rolloverDaily()` 内部的 `quest.settle()` 会完成「今日登场」并置 `questClaimed` —— 但 `rolloverDaily` **不消费**返回值 | ⚠️ 此步不入账 |
+| 2 | 之后 `pages/home.js` 或 `flow.createSession()` 调 `quest.enterDay()` 时该任务已 claimed，幂等返回 `{coins:0, xp:0}` | —— 无需入账 |
+| 3 | 当天第一局 `applyRoundEnd()` 里的 `quest.settle()` 汇总出 `questCoins` / `questXp`，写进 RoundRecord 的 `quest` / `questXp` 明细行并连同本局收益一次写入 `profile` | ✅ **入账点** |
+
+因此断言口径是「`profile.coins` 的增量 === 所有明细行之和」（明细行含 `quest`），
+`dev/sim-economy.mjs` 的两条「入账链路」断言与「明细外入账恒为 0」就是守这条契约的。
 
 ### 11.8 金币 / XP 的入账契约（单一写点）
 

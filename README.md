@@ -76,7 +76,8 @@ english-rpg/
 └── dev/                         开发期工具（删掉不影响页面运行）
     ├── check-words.mjs          词库校验 + 生成 words.js/words.json
     ├── selfcheck.mjs            在 Node 里跑同一套数值断言（67 条）
-    ├── sim-economy.mjs          v0.2 新增：30 天经济模拟（docs/01 A8 的四条区间断言）
+    ├── sim-economy.mjs          v0.2 新增：30 天经济模拟（A8 四条区间 + 2 条入账链路断言）
+    ├── check-mobile.mjs         v0.2 新增：移动端静态检查（viewport / 断点 / border-box / 断行 / 触控目标）
     ├── dom-e2e.mjs              用极简 DOM 在 Node 里跑 99 条端到端验收
     ├── domshim.mjs              极简 DOM + 虚拟时钟 + 可注入的 localStorage 故障（写失败/配额/静默丢写/多标签事件）
     ├── e2e.mjs                  真实浏览器 CDP 端到端脚本（需可用的 headless 浏览器）
@@ -128,12 +129,16 @@ english-rpg/
 node dev/check-words.mjs      # 词库校验：期望「错误 0 / 结论: 通过」
 node dev/selfcheck.mjs        # 数值与状态机断言：期望「67/67 PASS」
 node dev/dom-e2e.mjs          # DOM 端到端：期望「99/99 通过，失败 0」
-node dev/sim-economy.mjs      # 30 天经济模拟（A8 四条区间）：详见输出末尾的断言汇总
+node dev/sim-economy.mjs      # 30 天经济模拟（A8 四条区间 + 2 条入账链路）：详见输出末尾的断言汇总
+node dev/check-mobile.mjs     # 移动端静态检查（360px 不溢出/不缩放/点击区 ≥44px）：期望「通过（9 项）」
 ```
 
 > `sim-economy.mjs` 默认同时跑两套口径：`--scope=full`（当前生产路径，含每日任务/宝箱）与
 > `--scope=legacy`（把 v0.2 留存收益置 0，与 docs/03 §5.5 的 v0.1 推导对齐）。
 > 可用 `--days=`、`--acc=`、`--seed=` 覆盖默认的 30 天 / 75% 命中 / 固定种子。
+>
+> `check-mobile.mjs` 只做**静态**判定（解析 4 个 CSS 文件与 `index.html` 的 viewport），
+> 能证明「声明层面」达标，**不能**证明真机渲染后没有横向滚动条 —— 后者仍须人眼在 360px 设备模拟器里复核（见 §5 已知限制第 5 条）。
 
 ---
 
@@ -160,7 +165,7 @@ node dev/sim-economy.mjs      # 30 天经济模拟（A8 四条区间）：详见
 2. **`file://` 下的浏览器差异**：个别浏览器对 `file://` 的 `localStorage` 有更严格的策略；若写入失败，App 顶部会出现「本次进度未保存」提示条，游戏仍可继续，但刷新会丢进度。换用静态服务器或换浏览器可解决。
 3. **语音依赖系统语音包**：发音走 `speechSynthesis`，中文系统上英文语音可能缺失或音质一般；听音辨词题（Q4）在检测不到 TTS 时会自动从本局题型中移除，权重按比例分给其他题型，不影响开局。
 4. **只有深色主题**：`tokens.css` 里保留了浅色主题变量（含 v0.2 新增的 `--gold-text` / `--success-text` 对照），但还没有主题切换开关。
-5. **视觉验收是人工完成的**：本机沙箱内无法启动 headless 浏览器（进程间命名管道被拒），所以自动验收覆盖的是"逻辑 + DOM 结构 + 交互"，**CSS 布局与绘制需要在真浏览器里肉眼确认**——包括 360px 下的不溢出与点击区尺寸（本轮做了静态推导 + 尺寸断言，但没做像素级渲染实测）。
+5. **视觉验收是人工完成的**：本机沙箱内无法启动 headless 浏览器（进程间命名管道被拒），所以自动验收覆盖的是"逻辑 + DOM 结构 + 交互"，**CSS 布局与绘制需要在真浏览器里肉眼确认**——包括 360px 下的不溢出与点击区尺寸。可执行的部分已尽量交给脚本：`node dev/check-mobile.mjs` 静态断言「viewport 不缩放 / 全局 border-box / 断行兜底 / xs 断点存在 / 页面级没有用 `overflow-x:hidden` 掩盖溢出 / 4 类触控目标 ≥44px」（当前通过 9 项，并做过 3 次变异测试确认它不是橡皮图章）；**渲染后是否真的没有横向滚动条仍须人眼复核**。
 6. **词库是人工录入的**：释义与例句逐条核验过机器规则，但不是从权威词库导入，个别词的语感可能不完美；发现可疑词条直接改 `app/data/words.json` 后重跑 `node dev/check-words.mjs --write`。
 7. **多标签页是"合并"而不是"实时同步"**：写盘前会读盘合并双方进度（徽章取并集、累计量取最大、roundId 去重），
    因此两边都不会丢；但界面上的数字要等下一次渲染才会反映对方的进度，不做逐秒同步。
